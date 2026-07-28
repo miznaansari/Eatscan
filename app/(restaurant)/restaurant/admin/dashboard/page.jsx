@@ -12,37 +12,65 @@ export default function ManagerDashboardPage() {
   const [orders, setOrders] = useState([]);
   const [newOrderAlert, setNewOrderAlert] = useState(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [updatingOrderIds, setUpdatingOrderIds] = useState({});
 
   // Audio Context Ref
   const audioCtxRef = useRef(null);
 
-  // Play crisp loud chime sound using Web Audio API
+  // Play chime sound
   const playChimeSound = () => {
     try {
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
       const ctx = audioCtxRef.current;
-      if (ctx.state === "suspended") ctx.resume();
-
-      const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(587.33, now); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, now + 0.2); // A5
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
 
-      gain.gain.setValueAtTime(0.5, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(now);
-      osc.stop(now + 0.8);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.log("Audio play suppressed:", e);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    setUpdatingOrderIds((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      const res = await fetch("/api/restaurant/order-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, orderStatus: newStatus }),
+      });
+
+      if (res.ok) {
+        if (newStatus === "COMPLETED" || newStatus === "CANCELLED") {
+          setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        } else {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+          );
+        }
+        if (newOrderAlert?.id === orderId) setNewOrderAlert(null);
+      }
     } catch (err) {
-      console.log("Audio play error:", err);
+      console.error("Update status error:", err);
+    } finally {
+      setUpdatingOrderIds((prev) => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
+      });
     }
   };
 
@@ -96,29 +124,6 @@ export default function ManagerDashboardPage() {
       eventSource.close();
     };
   }, [router]);
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      const res = await fetch("/api/restaurant/order-status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, orderStatus: newStatus }),
-      });
-
-      if (res.ok) {
-        if (newStatus === "COMPLETED" || newStatus === "CANCELLED") {
-          setOrders((prev) => prev.filter((o) => o.id !== orderId));
-        } else {
-          setOrders((prev) =>
-            prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
-          );
-        }
-        if (newOrderAlert?.id === orderId) setNewOrderAlert(null);
-      }
-    } catch (err) {
-      console.error("Update status error:", err);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("eatscan_manager_token");
@@ -192,10 +197,18 @@ export default function ManagerDashboardPage() {
 
             <div className="flex items-center space-x-2">
               <button
+                disabled={!!updatingOrderIds[newOrderAlert.id]}
                 onClick={() => updateOrderStatus(newOrderAlert.id, "ACCEPTED")}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
               >
-                Accept Order
+                {updatingOrderIds[newOrderAlert.id] ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Accepting...</span>
+                  </>
+                ) : (
+                  <span>Accept Order</span>
+                )}
               </button>
               <button
                 onClick={() => setNewOrderAlert(null)}
@@ -294,34 +307,66 @@ export default function ManagerDashboardPage() {
                     <div className="flex items-center space-x-2 pt-2">
                       {order.orderStatus === "PENDING" && (
                         <button
+                          disabled={!!updatingOrderIds[order.id]}
                           onClick={() => updateOrderStatus(order.id, "ACCEPTED")}
-                          className="flex-1 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700"
+                          className="flex-1 py-2.5 rounded-xl bg-purple-600 text-white font-black text-xs hover:bg-purple-700 active:scale-95 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                         >
-                          Accept Order
+                          {updatingOrderIds[order.id] ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Accepting...</span>
+                            </>
+                          ) : (
+                            <span>Accept Order</span>
+                          )}
                         </button>
                       )}
                       {order.orderStatus === "ACCEPTED" && (
                         <button
+                          disabled={!!updatingOrderIds[order.id]}
                           onClick={() => updateOrderStatus(order.id, "PREPARING")}
-                          className="flex-1 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs hover:bg-amber-600"
+                          className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-black text-xs hover:bg-amber-600 active:scale-95 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                         >
-                          Start Cooking
+                          {updatingOrderIds[order.id] ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Starting...</span>
+                            </>
+                          ) : (
+                            <span>Start Cooking</span>
+                          )}
                         </button>
                       )}
                       {order.orderStatus === "PREPARING" && (
                         <button
+                          disabled={!!updatingOrderIds[order.id]}
                           onClick={() => updateOrderStatus(order.id, "SERVED")}
-                          className="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700"
+                          className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                         >
-                          Mark Served
+                          {updatingOrderIds[order.id] ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Serving...</span>
+                            </>
+                          ) : (
+                            <span>Mark Served</span>
+                          )}
                         </button>
                       )}
                       {order.orderStatus === "SERVED" && (
                         <button
+                          disabled={!!updatingOrderIds[order.id]}
                           onClick={() => updateOrderStatus(order.id, "COMPLETED")}
-                          className="flex-1 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800"
+                          className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white font-black text-xs hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                         >
-                          Complete & Pay
+                          {updatingOrderIds[order.id] ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Completing...</span>
+                            </>
+                          ) : (
+                            <span>Complete & Pay</span>
+                          )}
                         </button>
                       )}
                     </div>
