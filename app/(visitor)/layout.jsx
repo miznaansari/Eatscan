@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, QrCode, Menu, X, Layers, Clock, Smartphone, ShieldCheck, LogIn, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Menu, X, Layers, Clock, Smartphone, ShieldCheck, LogIn, ChevronRight } from "lucide-react";
 
 export default function VisitorLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
+  const toggleMobileMenu = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setMobileMenuOpen((prev) => !prev);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-100/70 via-slate-50 to-purple-50/50 relative">
-      {/* Background ambient liquid glass orbs for specular mirror reflection */}
+      {/* Background ambient liquid glass orbs */}
       <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[500px] h-[500px] bg-purple-400/15 rounded-full blur-[100px] pointer-events-none -z-10" />
       <div className="fixed top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[90px] pointer-events-none -z-10" />
 
@@ -21,7 +44,7 @@ export default function VisitorLayout({ children }) {
             <img
               src="/favicon.svg"
               alt="EatScan Logo"
-              className="w-10 h-10 rounded-2xl shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform object-contain"
+              className="w-10 h-10 rounded-2xl shadow-md shadow-purple-500/20 object-contain"
             />
             <div>
               <span className="font-black text-xl tracking-tight text-slate-900">EatScan</span>
@@ -47,146 +70,144 @@ export default function VisitorLayout({ children }) {
               <span className="sm:hidden">Free</span>
             </Link>
 
-            {/* Mobile Hamburger Toggle Button - Zero Delay Touch */}
+            {/* Mobile Hamburger Toggle Button - 100% Reliable Dual Touch Handler */}
             <button
               type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="md:hidden relative z-30 p-2.5 rounded-2xl glass-pill text-slate-800 hover:text-purple-600 active:scale-95 transition-all border border-purple-200 shadow-sm flex items-center justify-center cursor-pointer select-none touch-manipulation"
+              onClick={toggleMobileMenu}
+              onTouchEnd={toggleMobileMenu}
+              className="md:hidden relative z-50 p-2.5 rounded-2xl bg-white/90 text-slate-800 border border-purple-200 shadow-sm flex items-center justify-center cursor-pointer select-none touch-manipulation"
               aria-label="Toggle Mobile Sidebar"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5 text-purple-700" /> : <Menu className="w-5 h-5 text-purple-700" />}
+              {mobileMenuOpen ? <X className="w-6 h-6 text-purple-700" /> : <Menu className="w-6 h-6 text-purple-700" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Glass Sidebar Drawer Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-[100] md:hidden flex justify-start pointer-events-auto">
-            {/* Backdrop Overlay with Fast Fade Transition */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-slate-950/50 cursor-pointer"
-            />
+      {/* Mobile Drawer Overlay Container */}
+      <div
+        className={`fixed inset-0 z-[999] md:hidden transition-opacity duration-300 ${
+          mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        {/* Backdrop Dark Mask */}
+        <div
+          onClick={closeMobileMenu}
+          onTouchEnd={closeMobileMenu}
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+        />
 
-            {/* Glossy Mobile Sidebar Drawer with Hardware-Accelerated 120fps Slide */}
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              style={{ willChange: "transform" }}
-              className="relative w-72 max-w-[82vw] h-full bg-white border-r border-slate-200 shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto"
-            >
-              <div className="space-y-6">
-                {/* Drawer Top Header */}
-                <div className="flex items-center justify-between border-b border-purple-100 pb-4">
-                  <div className="flex items-center space-x-2">
-                    <img
-                      src="/favicon.svg"
-                      alt="EatScan Logo"
-                      className="w-8 h-8 rounded-xl shadow-sm object-contain"
-                    />
-                    <span className="font-black text-slate-900 text-lg">EatScan</span>
-                  </div>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Sidebar Navigation Links */}
-                <nav className="space-y-2">
-                  <Link
-                    href="#features"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Layers className="w-4 h-4 text-purple-600" />
-                      <span>Features</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </Link>
-
-                  <Link
-                    href="#demo"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Smartphone className="w-4 h-4 text-purple-600" />
-                      <span>Live Demo</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </Link>
-
-                  <Link
-                    href="#timings"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Clock className="w-4 h-4 text-purple-600" />
-                      <span>Multi-Slot Hours</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </Link>
-
-                  <div className="border-t border-purple-100 my-2 pt-2 space-y-2">
-                    <Link
-                      href="/restaurant/admin/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <LogIn className="w-4 h-4 text-purple-600" />
-                        <span>Manager PWA Login</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </Link>
-
-                    <Link
-                      href="/admin/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <ShieldCheck className="w-4 h-4 text-purple-600" />
-                        <span>Super Admin</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </Link>
-                  </div>
-                </nav>
+        {/* Drawer Panel - Pure 60fps GPU Hardware Acceleration */}
+        <aside
+          className={`absolute top-0 left-0 bottom-0 w-72 max-w-[82vw] bg-white shadow-2xl border-r border-slate-200 p-6 flex flex-col justify-between transform transition-transform duration-300 ease-out ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+          style={{ willChange: "transform" }}
+        >
+          <div className="space-y-6">
+            {/* Drawer Top Header */}
+            <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+              <div className="flex items-center space-x-2">
+                <img
+                  src="/favicon.svg"
+                  alt="EatScan Logo"
+                  className="w-8 h-8 rounded-xl shadow-sm object-contain"
+                />
+                <span className="font-black text-slate-900 text-lg">EatScan</span>
               </div>
+              <button
+                type="button"
+                onClick={closeMobileMenu}
+                onTouchEnd={closeMobileMenu}
+                className="p-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Sidebar Bottom CTA */}
-              <div className="pt-6 border-t border-purple-100 space-y-3">
+            {/* Sidebar Navigation Links */}
+            <nav className="space-y-2">
+              <Link
+                href="#features"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
+              >
+                <div className="flex items-center space-x-3">
+                  <Layers className="w-4 h-4 text-purple-600" />
+                  <span>Features</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </Link>
+
+              <Link
+                href="#demo"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
+              >
+                <div className="flex items-center space-x-3">
+                  <Smartphone className="w-4 h-4 text-purple-600" />
+                  <span>Live Demo</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </Link>
+
+              <Link
+                href="#timings"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
+              >
+                <div className="flex items-center space-x-3">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <span>Multi-Slot Hours</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </Link>
+
+              <div className="border-t border-purple-100 my-2 pt-2 space-y-2">
                 <Link
-                  href="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl font-bold text-sm btn-purple flex items-center justify-center space-x-2 text-center"
+                  href="/restaurant/admin/login"
+                  onClick={closeMobileMenu}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
                 >
-                  <Sparkles className="w-4 h-4 text-purple-200" />
-                  <span>Onboard Restaurant Free</span>
+                  <div className="flex items-center space-x-3">
+                    <LogIn className="w-4 h-4 text-purple-600" />
+                    <span>Manager PWA Login</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </Link>
 
-                <div className="text-center text-[11px] font-bold text-slate-400">
-                  © 2026 eatscan.online
-                </div>
+                <Link
+                  href="/admin/login"
+                  onClick={closeMobileMenu}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all"
+                >
+                  <div className="flex items-center space-x-3">
+                    <ShieldCheck className="w-4 h-4 text-purple-600" />
+                    <span>Super Admin</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </Link>
               </div>
-            </motion.aside>
+            </nav>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* Sidebar Bottom CTA */}
+          <div className="pt-6 border-t border-purple-100 space-y-3">
+            <Link
+              href="/register"
+              onClick={closeMobileMenu}
+              className="w-full py-3 rounded-xl font-bold text-sm btn-purple flex items-center justify-center space-x-2 text-center"
+            >
+              <Sparkles className="w-4 h-4 text-purple-200" />
+              <span>Onboard Restaurant Free</span>
+            </Link>
+
+            <div className="text-center text-[11px] font-bold text-slate-400">
+              © 2026 eatscan.online
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <main className="flex-1">{children}</main>
 
