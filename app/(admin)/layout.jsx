@@ -55,7 +55,7 @@ export default function SuperAdminLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col bg-purple-50/30 text-slate-900 relative pb-20 sm:pb-24">
       {/* Sticky Top Header */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/admin/dashboard" className="flex items-center space-x-3 group">
             <img

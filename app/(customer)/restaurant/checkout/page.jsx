@@ -117,7 +117,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen pb-28 bg-purple-50/30 text-slate-900">
       {/* Top Bar */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3">
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <button
             onClick={() => router.back()}

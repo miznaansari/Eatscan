@@ -129,7 +129,7 @@ export default function ManagerDashboardPage() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img

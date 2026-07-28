@@ -112,7 +112,7 @@ export default function OrderHistoryPage() {
   return (
     <div className="min-h-screen pb-24 bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link href="/restaurant/admin/dashboard" className="p-2 rounded-xl bg-slate-100 text-slate-700">
@@ -251,9 +251,14 @@ export default function OrderHistoryPage() {
                         <span className="text-slate-500">Customer: </span>
                         <span className="font-bold text-slate-900">{ord.customer?.name || "Guest Diner"} ({ord.customer?.mobileNo})</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1.5">
                         <span className="px-2 py-0.5 rounded-md bg-white border border-purple-200 text-purple-800 font-black text-[10px]">
                           {ord.paymentMethod}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                          ord.paymentStatus === "PAID" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700 animate-pulse"
+                        }`}>
+                          {ord.paymentStatus || "PENDING"}
                         </span>
                       </div>
                     </div>
@@ -276,10 +281,18 @@ export default function OrderHistoryPage() {
                       ))}
                     </div>
 
-                    {/* Grand Total */}
-                    <div className="border-t border-purple-100 pt-2 flex items-center justify-between font-black text-sm">
-                      <span className="text-slate-600">Grand Total</span>
-                      <span className="text-slate-900 text-base">₹{parseFloat(ord.grandTotal).toFixed(2)}</span>
+                    {/* Financial Summary */}
+                    <div className="border-t border-purple-100 pt-2 space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-black text-sm">
+                        <span className="text-slate-600">Grand Total</span>
+                        <span className="text-slate-900 text-base">₹{parseFloat(ord.grandTotal).toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-500 font-bold">
+                        <span>Paid: <strong className="text-emerald-700">₹{parseFloat(ord.paidAmount || 0).toFixed(2)}</strong></span>
+                        <span className={parseFloat(ord.dueAmount !== undefined ? ord.dueAmount : ord.grandTotal) > 0 ? "text-rose-600 font-black" : "text-emerald-600 font-black"}>
+                          Due: ₹{parseFloat(ord.dueAmount !== undefined ? ord.dueAmount : ord.grandTotal).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

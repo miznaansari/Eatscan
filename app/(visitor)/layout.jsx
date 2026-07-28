@@ -38,7 +38,7 @@ export default function VisitorLayout({ children }) {
       <div className="fixed top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[90px] pointer-events-none -z-10" />
 
       {/* Navigation Header */}
-      <header className="sticky top-0 z-50 px-3 sm:px-8 py-3.5 transition-all">
+      <header className="sticky-header sticky top-0 z-50 px-3 sm:px-8 py-3.5 transition-all">
         <div className="max-w-7xl mx-auto ios-navbar-floating px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3 group">
             <img

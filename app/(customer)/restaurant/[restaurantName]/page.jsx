@@ -20,12 +20,26 @@ export default function CustomerMenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tableTitle, setTableTitle] = useState("");
 
-  // Cart state stored in localStorage
+  // Cart & Splash screen state
   const [cart, setCart] = useState({});
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
   const [splashCountdown, setSplashCountdown] = useState(3);
 
+  const handleDismissSplash = () => {
+    setShowSplash(false);
+    if (restaurantSlug) {
+      localStorage.setItem(`eatscan_splash_seen_${restaurantSlug}`, "true");
+    }
+  };
+
   useEffect(() => {
+    // Check if splash screen was already seen for this restaurant
+    const splashSeenKey = `eatscan_splash_seen_${restaurantSlug}`;
+    const hasSeenSplash = localStorage.getItem(splashSeenKey);
+    if (hasSeenSplash !== "true") {
+      setShowSplash(true);
+    }
+
     // Read table title from localStorage if available
     const savedTable = localStorage.getItem("eatscan_table_title");
     if (savedTable) setTableTitle(savedTable);
@@ -67,7 +81,7 @@ export default function CustomerMenuPage() {
       setSplashCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setShowSplash(false);
+          handleDismissSplash();
           return 0;
         }
         return prev - 1;
@@ -75,7 +89,7 @@ export default function CustomerMenuPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [showSplash]);
+  }, [showSplash, restaurantSlug]);
 
   // Customization Modal State for Variants & Addons
   const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState(null);
@@ -164,8 +178,8 @@ export default function CustomerMenuPage() {
       {showSplash && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex flex-col items-center justify-center p-4 transition-opacity duration-500">
           <button
-            onClick={() => setShowSplash(false)}
-            className="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold text-xs flex items-center space-x-1"
+            onClick={handleDismissSplash}
+            className="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold text-xs flex items-center space-x-1 cursor-pointer"
           >
             <span>Skip ({splashCountdown}s)</span>
             <X className="w-4 h-4" />
@@ -194,7 +208,7 @@ export default function CustomerMenuPage() {
       )}
 
       {/* Header Banner */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 sm:py-4 shadow-lg backdrop-blur-2xl">
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 sm:py-4 shadow-lg backdrop-blur-2xl">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-2">

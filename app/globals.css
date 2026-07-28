@@ -15,16 +15,23 @@
   }
 }
 
-body {
+html, body {
   background-color: #faf8ff;
   color: #0f172a;
   font-family: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Sticky Header Utility for Mobile WebKit & Blink */
+.sticky-header {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
 }
 
 /* iOS 26 Glossymorphism & Mirror Reflection Design System (Purple + High Gloss Pearl) */
 .glass-navbar {
-  position: relative;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 245, 255, 0.92) 50%, rgba(255, 255, 255, 0.96) 100%);
   backdrop-filter: blur(28px) saturate(210%);
   -webkit-backdrop-filter: blur(28px) saturate(210%);
@@ -33,7 +40,6 @@ body {
 }
 
 .ios-navbar-floating {
-  position: relative;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 242, 255, 0.93) 50%, rgba(255, 255, 255, 0.97) 100%);
   backdrop-filter: blur(28px) saturate(210%);
   -webkit-backdrop-filter: blur(28px) saturate(210%);

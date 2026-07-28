@@ -61,13 +61,16 @@ export default function CustomerLayout({ children }) {
   const checkoutUrl = `/restaurant/checkout`;
   const orderUrl = latestOrderUid ? `/restaurant/order/${latestOrderUid}` : `/restaurant/checkout`;
 
+  const isCheckoutPage = pathname.includes("/checkout");
+
   return (
     <div className="min-h-screen flex flex-col bg-purple-50/30 text-slate-900 relative pb-20 sm:pb-24">
       <main className="flex-1">{children}</main>
 
-      {/* Floating Mobile Bottom Navigation Bar */}
-      <div className="fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto">
-        <nav className="ios-navbar-floating px-3 py-2 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl flex items-center justify-around">
+      {/* Floating Mobile Bottom Navigation Bar (Hidden on Checkout Page) */}
+      {!isCheckoutPage && (
+        <div className="fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto">
+          <nav className="ios-navbar-floating px-3 py-2 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl flex items-center justify-around">
           {/* Menu Tab */}
           <Link
             href={menuUrl}
@@ -127,6 +130,7 @@ export default function CustomerLayout({ children }) {
           </button>
         </nav>
       </div>
+      )}
 
       {/* Customer Quick Actions Drawer */}
       <AnimatePresence>
