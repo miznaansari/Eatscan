@@ -19,27 +19,7 @@ export async function PATCH(request) {
 
     const updateData = {};
     if (orderStatus) updateData.orderStatus = orderStatus;
-
-    const currentGrandTotal = parseFloat(existingOrder.grandTotal);
-    const newDiscount = discountAmount !== undefined ? parseFloat(discountAmount) : parseFloat(existingOrder.discountAmount || 0);
-    let newPaid = paidAmount !== undefined ? parseFloat(paidAmount) : parseFloat(existingOrder.paidAmount || 0);
-
-    const netTotal = Math.max(0, currentGrandTotal - newDiscount);
-
-    let calculatedPaymentStatus = paymentStatus || existingOrder.paymentStatus;
-    if (paymentStatus === "PAID" || newPaid >= netTotal) {
-      calculatedPaymentStatus = "PAID";
-      newPaid = netTotal;
-    } else if (newPaid > 0 && newPaid < netTotal) {
-      calculatedPaymentStatus = "PARTIAL";
-    }
-
-    const calculatedDue = Math.max(0, netTotal - newPaid);
-
-    updateData.discountAmount = newDiscount;
-    updateData.paidAmount = newPaid;
-    updateData.dueAmount = calculatedDue;
-    updateData.paymentStatus = calculatedPaymentStatus;
+    if (paymentStatus) updateData.paymentStatus = paymentStatus;
 
     const updatedOrder = await prisma.customerOrder.update({
       where: { id: orderId },

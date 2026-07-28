@@ -207,51 +207,78 @@ export default function CustomerMenuPage() {
         </div>
       )}
 
-      {/* Header Banner */}
-      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 sm:py-4 shadow-lg backdrop-blur-2xl">
+      {/* Sticky Top Navigation Header */}
+      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-tight">
-                {restaurant?.restaurantName || "Spice Garden Bistro"}
-              </h1>
-              {tableTitle && (
-                <span className="px-2.5 py-0.5 rounded-full glass-pill text-purple-700 font-black text-xs border border-purple-200 shadow-sm">
-                  {tableTitle}
-                </span>
-              )}
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 p-0.5 shadow-md shadow-purple-500/20">
+              <img
+                src="/favicon.svg"
+                alt="EatScan Logo"
+                className="w-full h-full object-contain rounded-[14px] bg-white p-0.5"
+              />
             </div>
-            <p className="text-xs text-slate-700 font-bold mt-1 flex items-center space-x-2">
-              <span>{restaurant?.address || "Indiranagar, Bengaluru"}</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-black flex items-center space-x-1">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
+                  {restaurant?.restaurantName || "Spice Garden Bistro"}
+                </h1>
+                {tableTitle && (
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-black text-[10px] border border-purple-200 shadow-sm">
+                    {tableTitle}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center space-x-1.5 text-[11px] font-extrabold text-emerald-700 mt-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>Open Now</span>
-              </span>
-            </p>
+                <span>Open Now • Multi-Slot Active</span>
+              </div>
+            </div>
           </div>
 
           <Link
             href="/"
-            className="w-10 h-10 rounded-2xl glass-pill flex items-center justify-center p-1 shadow-md hover:scale-105 transition-transform"
+            className="px-3 py-1.5 rounded-2xl glass-pill text-purple-700 font-extrabold text-xs border border-purple-200 shadow-sm hover:scale-105 transition-all flex items-center space-x-1"
           >
-            <img src="/favicon.svg" alt="EatScan Logo" className="w-full h-full object-contain" />
+            <span>EatScan</span>
           </Link>
         </div>
+      </header>
 
-        {/* Search Bar & Type Filter Pills */}
-        <div className="max-w-3xl mx-auto mt-3 space-y-3">
+      {/* Sub-Header & Filters Wrapper */}
+      <div className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
+        {/* Restaurant Sub-Header Info Banner */}
+        <section className="glass-card p-4 rounded-3xl border border-white/90 shadow-sm bg-white/90 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-700 font-black text-lg shadow-inner">
+              <Utensils className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">Digital Dining Menu</span>
+              <p className="text-xs text-slate-600 font-extrabold">{restaurant?.address || "Indiranagar, Bengaluru"}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs border border-emerald-200">
+              100% Verified Menu
+            </span>
+          </div>
+        </section>
+
+        {/* Search Bar & Veg/Non-Veg Filter */}
+        <section className="space-y-3">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500" />
+            <Search className="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500" />
             <input
               type="text"
               placeholder="Search for dishes, starters, biryani..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-8 py-2.5 rounded-2xl glass-input text-xs font-semibold focus:outline-none"
+              className="w-full pl-10 pr-8 py-3 rounded-2xl glass-input text-xs font-semibold focus:outline-none shadow-sm"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
@@ -262,8 +289,9 @@ export default function CustomerMenuPage() {
 
           <div className="flex items-center space-x-2 text-xs font-bold">
             <button
+              type="button"
               onClick={() => setFilterType("ALL")}
-              className={`px-3.5 py-1.5 rounded-full transition-all ${
+              className={`px-4 py-2 rounded-2xl transition-all ${
                 filterType === "ALL"
                   ? "btn-purple text-white shadow-sm"
                   : "glass-pill text-slate-700 hover:text-purple-600"
@@ -272,73 +300,77 @@ export default function CustomerMenuPage() {
               All Items
             </button>
             <button
+              type="button"
               onClick={() => setFilterType("VEG")}
-              className={`px-3.5 py-1.5 rounded-full transition-all flex items-center space-x-1.5 ${
+              className={`px-4 py-2 rounded-2xl transition-all flex items-center space-x-1.5 ${
                 filterType === "VEG"
-                  ? "bg-emerald-600 text-white shadow-sm"
+                  ? "bg-emerald-600 text-white shadow-sm font-black"
                   : "glass-pill text-emerald-700 hover:bg-emerald-50"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
               <span>Pure Veg</span>
             </button>
             <button
+              type="button"
               onClick={() => setFilterType("NON_VEG")}
-              className={`px-3.5 py-1.5 rounded-full transition-all flex items-center space-x-1.5 ${
+              className={`px-4 py-2 rounded-2xl transition-all flex items-center space-x-1.5 ${
                 filterType === "NON_VEG"
-                  ? "bg-rose-600 text-white shadow-sm"
+                  ? "bg-rose-600 text-white shadow-sm font-black"
                   : "glass-pill text-rose-700 hover:bg-rose-50"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-rose-500 border border-white" />
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
               <span>Non-Veg</span>
             </button>
           </div>
+        </section>
 
-          {/* Sticky Category Navigation Pills (The Bottom Bar inside Header) */}
-          <div className="border-t border-purple-100/70 pt-2.5 mt-2">
-            <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 text-xs font-bold">
+        {/* Sticky Category Navigation Bar */}
+        <section className="sticky top-[58px] z-30 py-2 bg-slate-50/95 backdrop-blur-xl border-y border-purple-100 -mx-4 px-4 shadow-sm">
+          <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 text-xs font-extrabold">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory("ALL");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`px-4 py-2 rounded-2xl whitespace-nowrap transition-all ${
+                activeCategory === "ALL"
+                  ? "btn-purple text-white shadow-md font-black"
+                  : "glass-pill text-slate-700 hover:text-purple-700"
+              }`}
+            >
+              ⭐ All Categories
+            </button>
+            {categories.map((cat) => (
               <button
+                key={cat.id}
+                type="button"
                 onClick={() => {
-                  setActiveCategory("ALL");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setActiveCategory(cat.id);
+                  const el = document.getElementById(`cat-${cat.id}`);
+                  if (el) {
+                    const offset = 140;
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = el.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                  }
                 }}
-                className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-all ${
-                  activeCategory === "ALL"
-                    ? "bg-slate-900 text-white shadow-sm"
+                className={`px-4 py-2 rounded-2xl whitespace-nowrap transition-all ${
+                  activeCategory === cat.id
+                    ? "btn-purple text-white shadow-md font-black"
                     : "glass-pill text-slate-700 hover:text-purple-700"
                 }`}
               >
-                ⭐ All Categories
+                {cat.categoryName}
               </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setActiveCategory(cat.id);
-                    const el = document.getElementById(`cat-${cat.id}`);
-                    if (el) {
-                      const offset = 180;
-                      const bodyRect = document.body.getBoundingClientRect().top;
-                      const elementRect = el.getBoundingClientRect().top;
-                      const elementPosition = elementRect - bodyRect;
-                      const offsetPosition = elementPosition - offset;
-                      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }
-                  }}
-                  className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-all ${
-                    activeCategory === cat.id
-                      ? "btn-purple text-white shadow-sm"
-                      : "glass-pill text-slate-700 hover:text-purple-700"
-                  }`}
-                >
-                  {cat.categoryName}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
-        </div>
-      </header>
+        </section>
+      </div>
 
       {/* Menu Categories & Item Lists */}
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-8">

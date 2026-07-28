@@ -114,24 +114,29 @@ export default function OrderStatusPage() {
         {/* Status Card Banner - High-Contrast Solid White Pearl Glass */}
         <section className="glass-card p-6 rounded-3xl bg-white text-center space-y-3 shadow-xl border border-white/90">
           <div className="w-14 h-14 rounded-2xl btn-purple text-white flex items-center justify-center mx-auto shadow-lg shadow-purple-500/25">
-            {order.orderStatus === "PENDING" && <Clock className="w-7 h-7 text-white animate-spin" />}
+            {order.orderStatus === "PENDING" && <CheckCircle2 className="w-7 h-7 text-emerald-300 animate-bounce" />}
             {order.orderStatus === "ACCEPTED" && <CheckCircle2 className="w-7 h-7 text-white" />}
             {order.orderStatus === "PREPARING" && <ChefHat className="w-7 h-7 text-white animate-pulse" />}
             {order.orderStatus === "SERVED" && <UtensilsCrossed className="w-7 h-7 text-white" />}
             {order.orderStatus === "COMPLETED" && <Sparkles className="w-7 h-7 text-white animate-bounce" />}
+            {order.orderStatus === "CANCELLED" && <AlertCircle className="w-7 h-7 text-rose-300" />}
           </div>
 
           <div>
-            <span className="inline-block px-3.5 py-1 rounded-full bg-purple-100 text-purple-700 font-black text-xs border border-purple-200 shadow-sm">
-              Live Order Tracker
-            </span>
-            <h2 className="text-2xl font-black text-slate-900 mt-2 leading-tight">
-              {order.orderStatus === "PENDING" && "Sent to Kitchen"}
-              {order.orderStatus === "ACCEPTED" && "Order Accepted!"}
-              {order.orderStatus === "PREPARING" && "Chef is Preparing..."}
-              {order.orderStatus === "SERVED" && "Served at Your Table!"}
-              {order.orderStatus === "COMPLETED" && "Completed & Thank You!"}
-              {order.orderStatus === "CANCELLED" && "Order Cancelled"}
+            <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-purple-100 text-purple-800 font-black text-xs border border-purple-200 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-purple-600 animate-ping" />
+              <span>
+                Current Status: {order.orderStatus === "PENDING" && "Sent to Kitchen"}
+                {order.orderStatus === "ACCEPTED" && "Order Accepted"}
+                {order.orderStatus === "PREPARING" && "Chef Preparing..."}
+                {order.orderStatus === "SERVED" && "Served at Table"}
+                {order.orderStatus === "COMPLETED" && "Completed & Thank You!"}
+                {order.orderStatus === "CANCELLED" && "Cancelled"}
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-black text-slate-900 mt-2.5 leading-tight">
+              Order Placed Successfully!
             </h2>
             <p className="text-xs text-purple-700 mt-1 font-extrabold">
               {order.qrTable ? `Seated at ${order.qrTable.tableTitle}` : "Table Order"}
@@ -139,43 +144,91 @@ export default function OrderStatusPage() {
           </div>
         </section>
 
-        {/* Live Stepper */}
-        <section className="glass-card p-6 rounded-3xl space-y-4 border border-white/90 shadow-md bg-white/90">
-          <h3 className="font-black text-xs text-slate-700 uppercase tracking-wider">Kitchen Live Progress</h3>
+        {/* Live Stepper - High Gloss iOS 26 Interactive Progress */}
+        <section className="glass-card p-5 sm:p-6 rounded-3xl space-y-5 border border-white/90 shadow-lg bg-white/95">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping" />
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Kitchen Live Progress</h3>
+            </div>
+            <span className="text-[10px] font-black text-purple-800 bg-purple-100 px-3 py-1 rounded-full border border-purple-200 shadow-sm">
+              Step {currentStep} of 4
+            </span>
+          </div>
 
-          <div className="relative flex items-center justify-between text-center px-2">
-            <div className="absolute top-1/2 left-6 right-6 h-1 bg-purple-100 -translate-y-1/2 -z-0" />
-            <div
-              className="absolute top-1/2 left-6 h-1 bg-purple-600 -translate-y-1/2 -z-0 transition-all duration-500"
-              style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
-            />
-
-            <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${currentStep >= 1 ? "bg-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-purple-100 text-purple-400"}`}>
-                1
-              </div>
-              <span className="text-[10px] font-extrabold mt-1.5 text-slate-800">Sent</span>
+          <div className="relative pb-1">
+            {/* Track Line Container strictly centered at vertical midpoint (22px) and icon centers (left 22px to right 22px) */}
+            <div className="absolute top-[20px] left-[22px] right-[22px] h-1 bg-purple-100 rounded-full -z-0 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 rounded-full transition-all duration-700"
+                style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
+              />
             </div>
 
-            <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${currentStep >= 2 ? "bg-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-purple-100 text-purple-400"}`}>
-                2
+            <div className="relative z-10 flex items-center justify-between text-center">
+              {/* Step 1: Placed */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    currentStep >= 1
+                      ? "bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 scale-105"
+                      : "bg-purple-50 text-purple-300 border border-purple-100"
+                  }`}
+                >
+                  <CheckCircle2 className={`w-5 h-5 ${currentStep === 1 ? "animate-bounce" : ""}`} />
+                </div>
+                <span className={`text-[11px] font-black mt-2 tracking-tight ${currentStep >= 1 ? "text-slate-900" : "text-slate-400"}`}>
+                  Placed
+                </span>
               </div>
-              <span className="text-[10px] font-extrabold mt-1.5 text-slate-800">Accepted</span>
-            </div>
 
-            <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${currentStep >= 3 ? "bg-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-purple-100 text-purple-400"}`}>
-                3
+              {/* Step 2: Accepted */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    currentStep >= 2
+                      ? "bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 scale-105"
+                      : "bg-purple-50 text-purple-300 border border-purple-100"
+                  }`}
+                >
+                  <Clock className={`w-5 h-5 ${currentStep === 2 ? "animate-spin" : ""}`} />
+                </div>
+                <span className={`text-[11px] font-black mt-2 tracking-tight ${currentStep >= 2 ? "text-slate-900" : "text-slate-400"}`}>
+                  Accepted
+                </span>
               </div>
-              <span className="text-[10px] font-extrabold mt-1.5 text-slate-800">Cooking</span>
-            </div>
 
-            <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${currentStep >= 4 ? "bg-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-purple-100 text-purple-400"}`}>
-                4
+              {/* Step 3: Cooking */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    currentStep >= 3
+                      ? "bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 scale-105"
+                      : "bg-purple-50 text-purple-300 border border-purple-100"
+                  }`}
+                >
+                  <ChefHat className={`w-5 h-5 ${currentStep === 3 ? "animate-pulse" : ""}`} />
+                </div>
+                <span className={`text-[11px] font-black mt-2 tracking-tight ${currentStep >= 3 ? "text-slate-900" : "text-slate-400"}`}>
+                  Cooking
+                </span>
               </div>
-              <span className="text-[10px] font-extrabold mt-1.5 text-slate-800">Served</span>
+
+              {/* Step 4: Served */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    currentStep >= 4
+                      ? "bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 scale-105"
+                      : "bg-purple-50 text-purple-300 border border-purple-100"
+                  }`}
+                >
+                  <UtensilsCrossed className={`w-5 h-5 ${currentStep === 4 ? "animate-bounce" : ""}`} />
+                </div>
+                <span className={`text-[11px] font-black mt-2 tracking-tight ${currentStep >= 4 ? "text-slate-900" : "text-slate-400"}`}>
+                  Served
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -193,32 +246,15 @@ export default function OrderStatusPage() {
           <ChevronRight className="w-4 h-4 text-purple-200" />
         </button>
 
-        {/* Payment Status Banner */}
-        <section className={`glass-card p-4 rounded-2xl border text-center flex items-center justify-between shadow-sm ${
-          order.paymentStatus === "PAID"
-            ? "bg-emerald-50/90 border-emerald-200 text-emerald-900"
-            : "bg-rose-50/90 border-rose-200 text-rose-900"
-        }`}>
-          <div className="flex items-center space-x-2.5">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm ${
-              order.paymentStatus === "PAID" ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
+        {/* Clean Payment Status Banner */}
+        <section className="glass-card p-4 rounded-2xl border border-white/90 shadow-sm bg-white flex items-center justify-between">
+          <span className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">
+            Payment Status
+          </span>
+          <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase shadow-sm ${order.paymentStatus === "PAID"
+              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+              : "bg-rose-100 text-rose-700 border border-rose-300 animate-pulse"
             }`}>
-              {order.paymentStatus === "PAID" ? "✓" : "!"}
-            </div>
-            <div className="text-left">
-              <div className="font-black text-xs uppercase tracking-wider">
-                {order.paymentStatus === "PAID" ? "Payment Complete" : "Payment Pending"}
-              </div>
-              <span className="text-[11px] font-extrabold text-slate-600">
-                {order.paymentStatus === "PAID"
-                  ? `Paid via ${order.paymentMethod || "Cash"}`
-                  : `Please pay ₹${parseFloat(order.dueAmount !== undefined ? order.dueAmount : order.grandTotal).toFixed(2)} at table or counter`}
-              </span>
-            </div>
-          </div>
-          <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase shadow-sm ${
-            order.paymentStatus === "PAID" ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
-          }`}>
             {order.paymentStatus || "PENDING"}
           </span>
         </section>
@@ -228,7 +264,7 @@ export default function OrderStatusPage() {
           <div className="flex items-center justify-between border-b border-purple-100 pb-2">
             <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Ordered Dishes</h3>
             <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-              Method: {order.paymentMethod || "CASH"}
+              {order.paymentMethod || "CASH"}
             </span>
           </div>
 
@@ -249,31 +285,9 @@ export default function OrderStatusPage() {
             ))}
           </div>
 
-          <div className="border-t border-purple-100 pt-3 space-y-1.5 text-xs font-semibold">
-            <div className="flex justify-between text-slate-600">
-              <span>Subtotal</span>
-              <span className="font-bold text-slate-900">₹{parseFloat(order.totalAmount || order.grandTotal).toFixed(2)}</span>
-            </div>
-            {parseFloat(order.discountAmount || 0) > 0 && (
-              <div className="flex justify-between text-emerald-600">
-                <span>Discount</span>
-                <span className="font-bold">-₹{parseFloat(order.discountAmount).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-black text-sm text-slate-900 pt-1 border-t border-purple-50">
-              <span>Grand Total</span>
-              <span className="text-slate-900 text-base font-black">₹{parseFloat(order.grandTotal).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-emerald-700 font-extrabold pt-1">
-              <span>Paid Amount</span>
-              <span>₹{parseFloat(order.paidAmount || 0).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-rose-600 font-black text-sm pt-1 border-t border-purple-50">
-              <span>Due Amount</span>
-              <span className="text-rose-600 font-mono text-base">
-                ₹{parseFloat(order.dueAmount !== undefined ? order.dueAmount : order.grandTotal).toFixed(2)}
-              </span>
-            </div>
+          <div className="border-t border-purple-100 pt-3 flex justify-between font-black text-sm text-slate-900">
+            <span>Grand Total</span>
+            <span className="text-slate-900 text-base font-black">₹{parseFloat(order.grandTotal).toFixed(2)}</span>
           </div>
         </section>
       </main>
