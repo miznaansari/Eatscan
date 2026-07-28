@@ -48,7 +48,7 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Navigation bar */}
-        <nav className="max-w-6xl mx-auto flex items-center space-x-3 mt-4 text-xs font-bold border-t pt-3">
+        <nav className="max-w-6xl mx-auto flex items-center space-x-3 mt-4 text-xs font-bold border-t pt-3 overflow-x-auto pb-1 whitespace-nowrap">
           <Link href="/admin/dashboard" className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white">
             Overview Metrics
           </Link>

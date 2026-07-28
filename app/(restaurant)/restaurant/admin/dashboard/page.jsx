@@ -157,7 +157,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="max-w-4xl mx-auto flex items-center space-x-2 mt-3 text-xs font-bold border-t pt-2">
+        <nav className="max-w-4xl mx-auto flex items-center space-x-2 mt-3 text-xs font-bold border-t pt-2 overflow-x-auto pb-1 whitespace-nowrap">
           <Link href="/restaurant/admin/dashboard" className="px-3 py-1.5 rounded-lg bg-slate-900 text-white">
             Live Orders
           </Link>
