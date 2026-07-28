@@ -1,0 +1,322 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  KITCHEN_CAPTAIN
+  WAITER
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Role {
+  id          String             @id @default(cuid())
+  roleName    String             @unique
+  description String?
+  isDeleted   Boolean            @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  permissions RolePermission[]
+  members     RestaurantMember[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id             String    @id @default(cuid())
+  permissionName String
+  roleId         String
+  role           Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  isDeleted      Boolean   @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("role_permissions")
+}
+
+model Restaurant {
+  id                 String                   @id @default(cuid())
+  uid                String                   @unique @default(cuid())
+  restaurantName     String
+  slug               String                   @unique
+  password           String
+  restaurantMobileNo String                   @unique
+  restaurantEmail    String                   @unique
+  address            String?
+  lat                Float?
+  long               Float?
+  isVerifiedMobileNo Boolean                  @default(false)
+  isVerifiedEmail    Boolean                  @default(false)
+  isActive           Boolean                  @default(true)
+  isDeleted          Boolean                  @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  timings       RestaurantTiming[]
+  members       RestaurantMember[]
+  images        RestaurantImage[]
+  rawMenuImages RestaurantRawMenuImage[]
+  categories    MenuCategory[]
+  menus         Menu[]
+  qrCodes       QrManagement[]
+  customers     Customer[]               @relation("AcquiredRestaurant")
+  orders        CustomerOrder[]
+
+  @@map("restaurants")
+}
+
+model RestaurantTiming {
+  id           String     @id @default(cuid())
+  day          DayOfWeek
+  startTime    String     // e.g. "10:00"
+  endTime      String     // e.g. "12:00"
+  isHoliday    Boolean    @default(false)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted    Boolean    @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("restaurant_timings")
+}
+
+model RestaurantMember {
+  id                   String                    @id @default(cuid())
+  name                 String
+  roleId               String
+  role                 Role                      @relation(fields: [roleId], references: [id])
+  restaurantMemberRole StaffRole                 @default(MANAGER)
+  email                String                    @unique
+  mobileNo             String                    @unique
+  password             String
+  isVerifiedMobileNo   Boolean                   @default(false)
+  isVerifiedEmail      Boolean                   @default(false)
+  restaurantId         String
+  restaurant           Restaurant                @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted            Boolean                   @default(false)
+  deletedAt            DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  sessions RestaurantMemberSession[]
+
+  @@map("restaurant_members")
+}
+
+model RestaurantMemberSession {
+  id                 String           @id @default(cuid())
+  token              String           @db.Text
+  userAgent          String?
+  isExpired          Boolean          @default(false)
+  expiresAt          DateTime
+  restaurantMemberId String
+  restaurantMember   RestaurantMember @relation(fields: [restaurantMemberId], references: [id], onDelete: Cascade)
+  isDeleted          Boolean          @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@map("restaurant_member_sessions")
+}
+
+model RestaurantImage {
+  id           String     @id @default(cuid())
+  primaryImg   Boolean    @default(false)
+  imageURL     String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted    Boolean    @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("restaurant_images")
+}
+
+model RestaurantRawMenuImage {
+  id                          String     @id @default(cuid())
+  restaurantRawMenuImagesURL String
+  restaurantId                String
+  restaurant                  Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted                   Boolean    @default(false)
+  deletedAt                   DateTime?
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @updatedAt
+
+  @@map("restaurant_raw_menu_images")
+}
+
+model MenuCategory {
+  id           String     @id @default(cuid())
+  categoryName String
+  description  String?
+  displayOrder Int        @default(0)
+  isActive     Boolean    @default(true)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted    Boolean    @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  menus Menu[]
+
+  @@map("menu_categories")
+}
+
+model Menu {
+  id             String       @id @default(cuid())
+  itemName       String
+  description    String?
+  price          Decimal      @db.Decimal(10, 2)
+  discountPrice  Decimal?     @db.Decimal(10, 2)
+  foodType       String       @default("VEG") // VEG, NON_VEG, EGG
+  imageUrl       String?
+  isAvailable    Boolean      @default(true)
+  menuCategoryId String
+  menuCategory   MenuCategory @relation(fields: [menuCategoryId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  orderItems CustomerOrderItem[]
+
+  @@map("menus")
+}
+
+model QrManagement {
+  id              String     @id @default(cuid())
+  uid             String     @unique @default(cuid())
+  tableTitle      String
+  seatingCapacity Int        @default(4)
+  qrCodeUrl       String?
+  isActive        Boolean    @default(true)
+  restaurantId    String
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  isDeleted       Boolean    @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+
+  orders CustomerOrder[]
+
+  @@map("qr_managements")
+}
+
+model Customer {
+  id                      String   @id @default(cuid())
+  uid                     String   @unique @default(cuid())
+  name                    String?
+  mobileNo                String   @unique
+  isVerifiedMobileNo      Boolean  @default(false)
+  createdFromRestaurantId String
+  acquiredByRestaurant    Restaurant @relation("AcquiredRestaurant", fields: [createdFromRestaurantId], references: [id])
+  isDeleted               Boolean  @default(false)
+  deletedAt               DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  sessions CustomerSession[]
+  orders   CustomerOrder[]
+
+  @@map("customers")
+}
+
+model CustomerSession {
+  id         String    @id @default(cuid())
+  token      String    @db.Text
+  userAgent  String?
+  isExpired  Boolean   @default(false)
+  expiresAt  DateTime
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("customer_sessions")
+}
+
+model CustomerOrder {
+  id            String        @id @default(cuid())
+  uid           String        @unique @default(cuid())
+  orderNumber   String
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  qrTableId     String?
+  qrTable       QrManagement? @relation(fields: [qrTableId], references: [id])
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  taxAmount     Decimal       @default(0.00) @db.Decimal(10, 2)
+  grandTotal    Decimal       @db.Decimal(10, 2)
+  orderStatus   OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String        @default("CASH") // CASH, ONLINE, UPI
+  specialNotes  String?
+  isDeleted     Boolean       @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items CustomerOrderItem[]
+
+  @@map("customer_orders")
+}
+
+model CustomerOrderItem {
+  id                  String        @id @default(cuid())
+  customerOrderId     String
+  customerOrder       CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
+  menuId              String?
+  menu                Menu?         @relation(fields: [menuId], references: [id], onDelete: SetNull)
+  itemName            String
+  itemPrice           Decimal       @db.Decimal(10, 2)
+  quantity            Int           @default(1)
+  subTotal            Decimal       @db.Decimal(10, 2)
+  specialInstructions String?
+  isDeleted           Boolean       @default(false)
+  deletedAt           DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@map("customer_order_items")
+}

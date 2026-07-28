@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="50%" stop-color="#E23744" />
+      <stop offset="100%" stop-color="#FACC15" />
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.6" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Glassmorphic Inner Frame -->
+  <rect x="64" y="64" width="384" height="384" rx="80" fill="url(#glassGrad)" stroke="#ffffff" stroke-width="8" />
+
+  <!-- QR Matrix Code Elements with Fork Accent -->
+  <rect x="128" y="128" width="80" height="80" rx="20" fill="#7C3AED" />
+  <rect x="148" y="148" width="40" height="40" rx="10" fill="#ffffff" />
+
+  <rect x="304" y="128" width="80" height="80" rx="20" fill="#E23744" />
+  <rect x="324" y="148" width="40" height="40" rx="10" fill="#ffffff" />
+
+  <rect x="128" y="304" width="80" height="80" rx="20" fill="#FACC15" />
+  <rect x="148" y="324" width="40" height="40" rx="10" fill="#7C3AED" />
+
+  <!-- Fork/Sparkle Center Icon -->
+  <path d="M320 280V380M300 280V320C300 331 309 340 320 340C331 340 340 331 340 320V280" stroke="#7C3AED" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "EatScan - Smart QR Menu & Ordering",
+  "short_name": "EatScan",
+  "description": "Instant QR code table ordering and real-time restaurant manager PWA system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF3FF",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
