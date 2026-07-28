@@ -49,8 +49,9 @@ export default function VisitorLayout({ children }) {
 
             {/* Mobile Hamburger Toggle Button */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-2xl glass-pill text-slate-800 hover:text-purple-600 transition-all border border-purple-100 flex items-center justify-center"
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="md:hidden relative z-30 p-2.5 rounded-2xl glass-pill text-slate-800 hover:text-purple-600 active:scale-95 transition-all border border-purple-200 shadow-sm flex items-center justify-center cursor-pointer select-none"
               aria-label="Toggle Mobile Sidebar"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-purple-700" /> : <Menu className="w-5 h-5 text-purple-700" />}
@@ -62,7 +63,7 @@ export default function VisitorLayout({ children }) {
       {/* Mobile Glass Sidebar Drawer Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex justify-start">
+          <div className="fixed inset-0 z-[100] md:hidden flex justify-start pointer-events-auto">
             {/* Backdrop Blur Overlay with Fade Transition */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -70,7 +71,7 @@ export default function VisitorLayout({ children }) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-slate-950/45 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-950/50 backdrop-blur-md cursor-pointer"
             />
 
             {/* Glossy Mobile Sidebar Drawer with Spring Slide In/Out Transition */}
@@ -79,15 +80,17 @@ export default function VisitorLayout({ children }) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="relative w-72 max-w-[82vw] h-full ios-mirror-card bg-white/95 border-r border-white/90 shadow-2xl p-6 flex flex-col justify-between z-10"
+              className="relative w-72 max-w-[82vw] h-full ios-mirror-card bg-white border-r border-white/90 shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto"
             >
               <div className="space-y-6">
                 {/* Drawer Top Header */}
                 <div className="flex items-center justify-between border-b border-purple-100 pb-4">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
-                      <QrCode className="w-4 h-4" />
-                    </div>
+                    <img
+                      src="/favicon.svg"
+                      alt="EatScan Logo"
+                      className="w-8 h-8 rounded-xl shadow-sm object-contain"
+                    />
                     <span className="font-black text-slate-900 text-lg">EatScan</span>
                   </div>
                   <button

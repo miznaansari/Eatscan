@@ -159,7 +159,7 @@ export default function CustomerMenuPage() {
       )}
 
       {/* Header Banner */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-4">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 sm:py-4 shadow-lg backdrop-blur-2xl">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-2">
@@ -167,7 +167,7 @@ export default function CustomerMenuPage() {
                 {restaurant?.restaurantName || "Spice Garden Bistro"}
               </h1>
               {tableTitle && (
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-extrabold text-xs border border-purple-200">
+                <span className="px-2.5 py-0.5 rounded-full glass-pill text-purple-700 font-extrabold text-xs border border-purple-200 shadow-sm">
                   {tableTitle}
                 </span>
               )}
@@ -175,42 +175,49 @@ export default function CustomerMenuPage() {
             <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center space-x-2">
               <span>{restaurant?.address || "Indiranagar, Bengaluru"}</span>
               <span>•</span>
-              <span className="text-purple-700 font-bold flex items-center space-x-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Open Now (Multi-Slot System)</span>
+              <span className="text-emerald-700 font-extrabold flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>Open Now</span>
               </span>
             </p>
           </div>
 
           <Link
             href="/"
-            className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black text-xs border border-purple-200"
+            className="w-10 h-10 rounded-2xl glass-pill flex items-center justify-center p-1 shadow-md hover:scale-105 transition-transform"
           >
-            ES
+            <img src="/favicon.svg" alt="EatScan Logo" className="w-full h-full object-contain" />
           </Link>
         </div>
 
-        {/* Search Bar & Veg Filters */}
-        <div className="max-w-3xl mx-auto mt-4 space-y-3">
+        {/* Search Bar & Type Filter Pills */}
+        <div className="max-w-3xl mx-auto mt-3 space-y-3">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500" />
             <input
               type="text"
               placeholder="Search for dishes, starters, biryani..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-input text-xs font-semibold focus:outline-none"
+              className="w-full pl-10 pr-8 py-2.5 rounded-2xl glass-input text-xs font-semibold focus:outline-none"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Type Filter Pills */}
           <div className="flex items-center space-x-2 text-xs font-bold">
             <button
               onClick={() => setFilterType("ALL")}
               className={`px-3.5 py-1.5 rounded-full transition-all ${
                 filterType === "ALL"
-                  ? "bg-purple-600 text-white shadow-sm shadow-purple-500/20"
-                  : "bg-white text-slate-600 border border-purple-100"
+                  ? "btn-purple text-white shadow-sm"
+                  : "glass-pill text-slate-700 hover:text-purple-600"
               }`}
             >
               All Items
@@ -220,7 +227,7 @@ export default function CustomerMenuPage() {
               className={`px-3.5 py-1.5 rounded-full transition-all flex items-center space-x-1.5 ${
                 filterType === "VEG"
                   ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-white text-emerald-700 border border-emerald-200"
+                  : "glass-pill text-emerald-700 hover:bg-emerald-50"
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white" />
@@ -231,12 +238,55 @@ export default function CustomerMenuPage() {
               className={`px-3.5 py-1.5 rounded-full transition-all flex items-center space-x-1.5 ${
                 filterType === "NON_VEG"
                   ? "bg-rose-600 text-white shadow-sm"
-                  : "bg-white text-rose-700 border border-rose-200"
+                  : "glass-pill text-rose-700 hover:bg-rose-50"
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-rose-500 border border-white" />
               <span>Non-Veg</span>
             </button>
+          </div>
+
+          {/* Sticky Category Navigation Pills (The Bottom Bar inside Header) */}
+          <div className="border-t border-purple-100/70 pt-2.5 mt-2">
+            <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveCategory("ALL");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-all ${
+                  activeCategory === "ALL"
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "glass-pill text-slate-700 hover:text-purple-700"
+                }`}
+              >
+                ⭐ All Categories
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    const el = document.getElementById(`cat-${cat.id}`);
+                    if (el) {
+                      const offset = 180;
+                      const bodyRect = document.body.getBoundingClientRect().top;
+                      const elementRect = el.getBoundingClientRect().top;
+                      const elementPosition = elementRect - bodyRect;
+                      const offsetPosition = elementPosition - offset;
+                      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-all ${
+                    activeCategory === cat.id
+                      ? "btn-purple text-white shadow-sm"
+                      : "glass-pill text-slate-700 hover:text-purple-700"
+                  }`}
+                >
+                  {cat.categoryName}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -253,10 +303,15 @@ export default function CustomerMenuPage() {
           if (filteredMenus.length === 0) return null;
 
           return (
-            <section key={cat.id} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-purple-100 pb-2">
-                <h2 className="text-lg font-black text-slate-900 tracking-tight">{cat.categoryName}</h2>
-                <span className="text-xs font-bold text-slate-400">{filteredMenus.length} items</span>
+            <section id={`cat-${cat.id}`} key={cat.id} className="space-y-4 scroll-mt-48">
+              <div className="flex items-center justify-between border-b border-purple-200/80 pb-2">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+                  <span>{cat.categoryName}</span>
+                </h2>
+                <span className="text-xs font-bold text-slate-500 glass-pill px-2.5 py-0.5 rounded-full">
+                  {filteredMenus.length} items
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -267,20 +322,22 @@ export default function CustomerMenuPage() {
                   return (
                     <div
                       key={item.id}
-                      className="glass-card p-4 rounded-2xl border border-purple-100 shadow-sm hover:shadow-md transition-all flex justify-between space-x-3 relative overflow-hidden bg-white"
+                      className="glass-card p-4 rounded-3xl border border-white/90 shadow-md hover:shadow-xl transition-all flex justify-between space-x-3 relative overflow-hidden"
                     >
                       <div className="flex-1 space-y-1.5">
                         <div className="flex items-center space-x-1.5">
                           {item.foodType === "VEG" ? (
-                            <span className="w-3.5 h-3.5 border border-emerald-600 flex items-center justify-center p-0.5 rounded-sm">
+                            <span className="w-3.5 h-3.5 border border-emerald-600 flex items-center justify-center p-0.5 rounded-sm bg-emerald-50">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                             </span>
                           ) : (
-                            <span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-0.5 rounded-sm">
+                            <span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-0.5 rounded-sm bg-rose-50">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
                             </span>
                           )}
-                          <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Bestseller</span>
+                          <span className="text-[10px] font-extrabold text-purple-700 uppercase tracking-wider px-1.5 py-0.5 rounded-full glass-pill">
+                            Bestseller
+                          </span>
                         </div>
 
                         <h3 className="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">
@@ -296,18 +353,18 @@ export default function CustomerMenuPage() {
                           )}
                         </div>
 
-                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal">
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
                           {item.description}
                         </p>
                       </div>
 
                       {/* Item Image & ADD Button */}
                       <div className="flex flex-col items-center justify-between flex-shrink-0 w-28">
-                        <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-purple-50 shadow-inner">
+                        <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-purple-50 shadow-inner border border-purple-100">
                           {item.imageUrl ? (
                             <img src={item.imageUrl} alt={item.itemName} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-purple-300 text-xs font-bold">
+                            <div className="w-full h-full flex items-center justify-center text-purple-400 text-xs font-bold bg-gradient-to-br from-purple-100 to-purple-50">
                               No Image
                             </div>
                           )}
@@ -322,7 +379,7 @@ export default function CustomerMenuPage() {
                         ) : (
                           <button
                             onClick={() => addToCart(item)}
-                            className="mt-2 px-5 py-1.5 rounded-xl bg-white border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-extrabold text-xs shadow-md transition-all uppercase"
+                            className="mt-2 px-5 py-1.5 rounded-xl btn-purple text-white font-extrabold text-xs shadow-md hover:scale-105 transition-all uppercase"
                           >
                             + Add
                           </button>
@@ -337,20 +394,20 @@ export default function CustomerMenuPage() {
         })}
       </main>
 
-      {/* Sticky Bottom Floating Bar (Purple + White) */}
+      {/* Sticky Bottom Floating Bar (Purple + White Glossy Glass) */}
       {cartTotalCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto">
-          <div className="glass-card p-4 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xl border border-purple-300/40 flex items-center justify-between">
+        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+          <div className="ios-navbar-floating p-4 rounded-3xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-2xl border border-white/40 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-200">
-                {cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"} Added
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-200">
+                {cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"} Selected
               </span>
               <div className="font-black text-xl">₹{cartTotalPrice.toFixed(2)}</div>
             </div>
 
             <Link
               href="/restaurant/checkout"
-              className="px-6 py-3 rounded-xl bg-white text-purple-900 font-black text-sm shadow-md hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+              className="px-6 py-3 rounded-2xl bg-white text-purple-900 font-black text-sm shadow-md hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
             >
               <span>View Cart</span>
               <ChevronRight className="w-4 h-4" />
