@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BellRing, Utensils, CheckCircle2, Clock, Volume2, ChefHat, LogOut, QrCode, SlidersHorizontal, AlertTriangle } from "lucide-react";
+import { BellRing, Utensils, CheckCircle2, Clock, Volume2, ChefHat, LogOut, QrCode, SlidersHorizontal, AlertTriangle, X } from "lucide-react";
 
 export default function ManagerDashboardPage() {
   const router = useRouter();
@@ -165,28 +165,45 @@ export default function ManagerDashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        {/* Real-time Order Alert Banner */}
+        {/* Real-time Order Alert Banner - High Contrast & Maximum Readability */}
         {newOrderAlert && (
-          <div className="glass-card p-4 rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 text-white shadow-2xl pulse-glow-zomato border border-white/50 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <BellRing className="w-6 h-6 text-amber-300 animate-bounce" />
+          <div className="p-4 sm:p-5 rounded-3xl bg-slate-950 text-white shadow-2xl border-2 border-amber-400 flex items-center justify-between animate-bounce">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex flex-shrink-0 items-center justify-center font-black shadow-lg shadow-amber-400/30">
+                <BellRing className="w-7 h-7 text-slate-950 animate-bounce" />
               </div>
               <div>
-                <span className="text-xs font-extrabold text-amber-300 uppercase tracking-wider">NEW ORDER ARRIVED!</span>
-                <h3 className="font-black text-lg">Order #{newOrderAlert.orderNumber} • {newOrderAlert.tableTitle}</h3>
-                <p className="text-xs text-purple-100 font-medium">
-                  {newOrderAlert.customerName || "Diner"} • ₹{parseFloat(newOrderAlert.grandTotal).toFixed(2)}
+                <div className="flex items-center space-x-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                    ⚡ NEW ORDER ARRIVED!
+                  </span>
+                  <span className="text-xs font-black text-purple-300">
+                    #{newOrderAlert.orderNumber}
+                  </span>
+                </div>
+                <h3 className="font-black text-lg text-white mt-1">
+                  {newOrderAlert.tableTitle || "Direct Table"}
+                </h3>
+                <p className="text-xs font-extrabold text-slate-300 mt-0.5">
+                  {newOrderAlert.customerName || "Guest Diner"} • <span className="text-amber-300 font-mono text-sm font-black">₹{parseFloat(newOrderAlert.grandTotal).toFixed(2)}</span>
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => updateOrderStatus(newOrderAlert.id, "ACCEPTED")}
-              className="px-5 py-2.5 rounded-xl bg-white text-purple-900 font-black text-xs shadow-md hover:scale-105 transition-all"
-            >
-              Accept Order
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => updateOrderStatus(newOrderAlert.id, "ACCEPTED")}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer"
+              >
+                Accept Order
+              </button>
+              <button
+                onClick={() => setNewOrderAlert(null)}
+                className="p-2.5 rounded-2xl bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

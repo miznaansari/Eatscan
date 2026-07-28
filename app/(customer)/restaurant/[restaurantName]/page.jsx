@@ -248,18 +248,18 @@ export default function CustomerMenuPage() {
       {/* Sub-Header & Filters Wrapper */}
       <div className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
         {/* Restaurant Sub-Header Info Banner */}
-        <section className="glass-card p-4 rounded-3xl border border-white/90 shadow-sm bg-white/90 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-700 font-black text-lg shadow-inner">
-              <Utensils className="w-6 h-6 text-purple-600" />
+        <section className="glass-card p-3.5 sm:p-4 rounded-3xl border border-white/90 shadow-sm bg-white/90 flex items-center justify-between gap-2.5">
+          <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-50 border border-purple-100 flex-shrink-0 flex items-center justify-center text-purple-700 font-black shadow-inner">
+              <Utensils className="w-5 h-5 text-purple-600" />
             </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">Digital Dining Menu</span>
-              <p className="text-xs text-slate-600 font-extrabold">{restaurant?.address || "Indiranagar, Bengaluru"}</p>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 block truncate">Digital Dining Menu</span>
+              <p className="text-xs text-slate-600 font-extrabold truncate">{restaurant?.address || "Indiranagar, Bengaluru"}</p>
             </div>
           </div>
-          <div className="text-right">
-            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs border border-emerald-200">
+          <div className="flex-shrink-0 text-right">
+            <span className="whitespace-nowrap inline-block px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-black text-[10px] sm:text-xs border border-emerald-200 shadow-sm">
               100% Verified Menu
             </span>
           </div>
