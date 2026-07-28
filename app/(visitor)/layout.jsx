@@ -11,18 +11,18 @@ export default function VisitorLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-100/70 via-slate-50 to-purple-50/50 relative">
       {/* Background ambient liquid glass orbs for specular mirror reflection */}
-      <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse" />
-      <div className="fixed top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-400/15 rounded-full blur-[100px] pointer-events-none -z-10" />
+      <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[500px] h-[500px] bg-purple-400/15 rounded-full blur-[100px] pointer-events-none -z-10" />
+      <div className="fixed top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[90px] pointer-events-none -z-10" />
 
       {/* Navigation Header */}
       <header className="sticky top-0 z-50 px-3 sm:px-8 py-3.5 transition-all">
         <div className="max-w-7xl mx-auto ios-navbar-floating px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 p-0.5 shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-white/90 rounded-[14px] flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="EatScan Logo"
+              className="w-10 h-10 rounded-2xl shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform object-contain"
+            />
             <div>
               <span className="font-black text-xl tracking-tight text-slate-900">EatScan</span>
             </div>
@@ -47,11 +47,11 @@ export default function VisitorLayout({ children }) {
               <span className="sm:hidden">Free</span>
             </Link>
 
-            {/* Mobile Hamburger Toggle Button */}
+            {/* Mobile Hamburger Toggle Button - Zero Delay Touch */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="md:hidden relative z-30 p-2.5 rounded-2xl glass-pill text-slate-800 hover:text-purple-600 active:scale-95 transition-all border border-purple-200 shadow-sm flex items-center justify-center cursor-pointer select-none"
+              className="md:hidden relative z-30 p-2.5 rounded-2xl glass-pill text-slate-800 hover:text-purple-600 active:scale-95 transition-all border border-purple-200 shadow-sm flex items-center justify-center cursor-pointer select-none touch-manipulation"
               aria-label="Toggle Mobile Sidebar"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-purple-700" /> : <Menu className="w-5 h-5 text-purple-700" />}
@@ -64,23 +64,24 @@ export default function VisitorLayout({ children }) {
       <AnimatePresence>
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-[100] md:hidden flex justify-start pointer-events-auto">
-            {/* Backdrop Blur Overlay with Fade Transition */}
+            {/* Backdrop Overlay with Fast Fade Transition */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-slate-950/50 backdrop-blur-md cursor-pointer"
+              className="fixed inset-0 bg-slate-950/50 cursor-pointer"
             />
 
-            {/* Glossy Mobile Sidebar Drawer with Spring Slide In/Out Transition */}
+            {/* Glossy Mobile Sidebar Drawer with Hardware-Accelerated 120fps Slide */}
             <motion.aside
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="relative w-72 max-w-[82vw] h-full ios-mirror-card bg-white border-r border-white/90 shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto"
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: "transform" }}
+              className="relative w-72 max-w-[82vw] h-full bg-white border-r border-slate-200 shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto"
             >
               <div className="space-y-6">
                 {/* Drawer Top Header */}

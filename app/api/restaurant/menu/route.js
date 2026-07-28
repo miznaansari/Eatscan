@@ -27,6 +27,10 @@ export async function GET(request) {
         menus: {
           where: { isDeleted: false },
           orderBy: { createdAt: "desc" },
+          include: {
+            variants: true,
+            addons: true,
+          },
         },
       },
     });
@@ -50,7 +54,19 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { type, restaurantId, categoryName, itemName, price, discountPrice, foodType, imageUrl, menuCategoryId } = body;
+    const {
+      type,
+      restaurantId,
+      categoryName,
+      itemName,
+      price,
+      discountPrice,
+      foodType,
+      imageUrl,
+      menuCategoryId,
+      variants = [],
+      addons = [],
+    } = body;
 
     if (type === "CATEGORY") {
       const newCat = await prisma.menuCategory.create({
@@ -72,6 +88,22 @@ export async function POST(request) {
           imageUrl: imageUrl || null,
           menuCategoryId,
           restaurantId,
+          variants: {
+            create: (variants || []).map((v) => ({
+              variantName: v.variantName,
+              price: parseFloat(v.price),
+            })),
+          },
+          addons: {
+            create: (addons || []).map((a) => ({
+              addonName: a.addonName,
+              price: parseFloat(a.price),
+            })),
+          },
+        },
+        include: {
+          variants: true,
+          addons: true,
         },
       });
       return NextResponse.json({ success: true, item: newItem });

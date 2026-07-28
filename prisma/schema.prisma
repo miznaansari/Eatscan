@@ -216,9 +216,35 @@ model Menu {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  variants   MenuVariant[]
+  addons     MenuAddon[]
   orderItems CustomerOrderItem[]
 
   @@map("menus")
+}
+
+model MenuVariant {
+  id          String   @id @default(cuid())
+  variantName String   // e.g. "Half", "Full", "Small", "Medium", "Large"
+  price       Decimal  @db.Decimal(10, 2)
+  menuId      String
+  menu        Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("menu_variants")
+}
+
+model MenuAddon {
+  id        String   @id @default(cuid())
+  addonName String   // e.g. "Extra Cheese", "Extra Mayo", "Extra Dip"
+  price     Decimal  @db.Decimal(10, 2)
+  menuId    String
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("menu_addons")
 }
 
 model QrManagement {
@@ -310,6 +336,8 @@ model CustomerOrderItem {
   menu                Menu?         @relation(fields: [menuId], references: [id], onDelete: SetNull)
   itemName            String
   itemPrice           Decimal       @db.Decimal(10, 2)
+  variantName         String?
+  selectedAddons      String?
   quantity            Int           @default(1)
   subTotal            Decimal       @db.Decimal(10, 2)
   specialInstructions String?

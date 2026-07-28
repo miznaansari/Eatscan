@@ -165,8 +165,16 @@ export default function OrderStatusPage() {
           <h3 className="font-extrabold text-xs text-slate-700 uppercase">Ordered Dishes</h3>
           <div className="space-y-2">
             {order.items?.map((item) => (
-              <div key={item.id} className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-800 font-bold">{item.quantity}x {item.itemName}</span>
+              <div key={item.id} className="flex justify-between text-xs border-b border-purple-50 pb-2 last:border-b-0 last:pb-0">
+                <div>
+                  <div className="text-slate-800 font-extrabold">{item.quantity}x {item.itemName}</div>
+                  {item.variantName && (
+                    <div className="text-[10px] font-bold text-purple-700">Portion: {item.variantName}</div>
+                  )}
+                  {item.selectedAddons && (
+                    <div className="text-[10px] text-slate-500 font-medium">{item.selectedAddons}</div>
+                  )}
+                </div>
                 <span className="font-mono text-slate-900 font-black">₹{parseFloat(item.subTotal).toFixed(2)}</span>
               </div>
             ))}

@@ -254,11 +254,19 @@ export default function ManagerDashboardPage() {
                     </div>
 
                     {/* Item Details */}
-                    <div className="space-y-1 text-xs font-semibold text-slate-700">
+                    <div className="space-y-1.5 text-xs font-semibold text-slate-700">
                       {order.items?.map((item) => (
-                        <div key={item.id} className="flex justify-between">
-                          <span>{item.quantity}x {item.itemName}</span>
-                          <span className="font-mono text-slate-900">₹{parseFloat(item.subTotal).toFixed(2)}</span>
+                        <div key={item.id} className="flex justify-between items-start border-b border-slate-100 pb-1.5 last:border-b-0 last:pb-0">
+                          <div>
+                            <div className="font-extrabold text-slate-900">{item.quantity}x {item.itemName}</div>
+                            {item.variantName && (
+                              <div className="text-[10px] font-bold text-purple-700">Portion: {item.variantName}</div>
+                            )}
+                            {item.selectedAddons && (
+                              <div className="text-[10px] text-slate-500 font-medium">{item.selectedAddons}</div>
+                            )}
+                          </div>
+                          <span className="font-mono text-slate-900 font-extrabold">₹{parseFloat(item.subTotal).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>

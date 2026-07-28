@@ -60,8 +60,9 @@ export default function CheckoutPage() {
       const payload = {
         mobileNo: mobileNo.trim(),
         name: customerName ? customerName.trim() : "Guest Diner",
-        restaurantId: restaurantId || "clr123sample",
-        tableUid: tableUid || "tbl-spice-01",
+        restaurantId: restaurantId || null,
+        restaurantSlug: localStorage.getItem("eatscan_restaurant_slug") || "spice-garden",
+        tableUid: tableUid || null,
         items: cart.map((i) => ({
           menuId: i.id,
           itemName: i.name,
@@ -136,13 +137,21 @@ export default function CheckoutPage() {
         <section className="glass-card p-5 rounded-3xl space-y-4 border border-white/90 shadow-md">
           <h2 className="font-extrabold text-base text-slate-900 border-b border-purple-100 pb-2">Order Items</h2>
           <div className="space-y-3">
-            {cart.map((item) => (
-              <div key={item.id} className="flex items-center justify-between text-xs font-semibold">
-                <div className="flex items-center space-x-2">
-                  <span className="w-5 h-5 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+            {cart.map((item, idx) => (
+              <div key={item.cartKey || `${item.id}-${idx}`} className="flex items-start justify-between text-xs border-b border-purple-50 pb-2 last:border-b-0 last:pb-0">
+                <div className="flex items-start space-x-2">
+                  <span className="w-5 h-5 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
                     {item.quantity}x
                   </span>
-                  <span className="font-bold text-slate-800">{item.name}</span>
+                  <div>
+                    <div className="font-extrabold text-slate-800">{item.name}</div>
+                    {item.variantName && (
+                      <div className="text-[10px] font-bold text-purple-700">Portion: {item.variantName}</div>
+                    )}
+                    {item.selectedAddons && (
+                      <div className="text-[10px] text-slate-500 font-medium">{item.selectedAddons}</div>
+                    )}
+                  </div>
                 </div>
                 <span className="font-mono text-slate-900 font-black text-xs">₹{(item.price * item.quantity).toFixed(2)}</span>
               </div>

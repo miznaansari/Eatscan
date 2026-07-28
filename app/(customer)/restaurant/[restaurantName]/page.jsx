@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, ShoppingBag, Flame, Sparkles, Clock, CheckCircle2, ChevronRight, X, Volume2, Utensils } from "lucide-react";
+import { Search, ShoppingBag, Flame, Sparkles, Clock, CheckCircle2, ChevronRight, X, Volume2, Utensils, Plus, Layers } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CustomerMenuPage() {
   const params = useParams();
@@ -41,9 +42,12 @@ export default function CustomerMenuPage() {
       try {
         const res = await fetch(`/api/restaurant/menu?slug=${restaurantSlug}`);
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.restaurant) {
           setRestaurant(data.restaurant);
           setCategories(data.categories || []);
+          localStorage.setItem("eatscan_restaurant_id", data.restaurant.id);
+          localStorage.setItem("eatscan_restaurant_name", data.restaurant.restaurantName);
+          localStorage.setItem("eatscan_restaurant_slug", data.restaurant.slug || restaurantSlug);
         }
       } catch (err) {
         console.error("Error loading menu:", err);
@@ -73,16 +77,46 @@ export default function CustomerMenuPage() {
     return () => clearInterval(timer);
   }, [showSplash]);
 
-  // Cart Helper functions
-  const addToCart = (item) => {
-    const newCart = { ...cart };
-    if (newCart[item.id]) {
-      newCart[item.id].quantity += 1;
+  // Customization Modal State for Variants & Addons
+  const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedAddonsMap, setSelectedAddonsMap] = useState({});
+
+  const handleOpenCustomization = (item) => {
+    if ((item.variants && item.variants.length > 0) || (item.addons && item.addons.length > 0)) {
+      setSelectedMenuItemForCustomization(item);
+      setSelectedVariant(item.variants && item.variants.length > 0 ? item.variants[0] : null);
+      setSelectedAddonsMap({});
     } else {
-      newCart[item.id] = {
+      addToCartWithDetails(item, null, []);
+    }
+  };
+
+  const addToCartWithDetails = (item, variant, addonsList) => {
+    const basePrice = variant
+      ? parseFloat(variant.price)
+      : item.discountPrice
+      ? parseFloat(item.discountPrice)
+      : parseFloat(item.price);
+    const addonsTotal = (addonsList || []).reduce((sum, a) => sum + parseFloat(a.price), 0);
+    const finalUnitPrice = basePrice + addonsTotal;
+
+    const variantLabel = variant ? variant.variantName : "";
+    const addonsText = (addonsList || []).map((a) => `${a.addonName} (+₹${parseFloat(a.price).toFixed(2)})`).join(", ");
+
+    const cartKey = `${item.id}-${variant ? variant.id : "base"}-${(addonsList || []).map((a) => a.id).sort().join("-")}`;
+
+    const newCart = { ...cart };
+    if (newCart[cartKey]) {
+      newCart[cartKey].quantity += 1;
+    } else {
+      newCart[cartKey] = {
+        cartKey: cartKey,
         id: item.id,
         name: item.itemName,
-        price: item.discountPrice ? parseFloat(item.discountPrice) : parseFloat(item.price),
+        price: finalUnitPrice,
+        variantName: variantLabel,
+        selectedAddons: addonsText,
         quantity: 1,
         imageUrl: item.imageUrl,
         foodType: item.foodType,
@@ -90,15 +124,16 @@ export default function CustomerMenuPage() {
     }
     setCart(newCart);
     localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+    setSelectedMenuItemForCustomization(null);
   };
 
-  const removeFromCart = (itemId) => {
+  const removeFromCart = (cartKey) => {
     const newCart = { ...cart };
-    if (newCart[itemId]) {
-      if (newCart[itemId].quantity > 1) {
-        newCart[itemId].quantity -= 1;
+    if (newCart[cartKey]) {
+      if (newCart[cartKey].quantity > 1) {
+        newCart[cartKey].quantity -= 1;
       } else {
-        delete newCart[itemId];
+        delete newCart[cartKey];
       }
     }
     setCart(newCart);
@@ -370,20 +405,48 @@ export default function CustomerMenuPage() {
                           )}
                         </div>
 
-                        {qty > 0 ? (
-                          <div className="mt-2 flex items-center space-x-2 px-3 py-1 rounded-xl btn-purple text-white text-xs font-black shadow-md">
-                            <button onClick={() => removeFromCart(item.id)} className="px-1 text-base font-bold">-</button>
-                            <span>{qty}</span>
-                            <button onClick={() => addToCart(item)} className="px-1 text-base font-bold">+</button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="mt-2 px-5 py-1.5 rounded-xl btn-purple text-white font-extrabold text-xs shadow-md hover:scale-105 transition-all uppercase"
-                          >
-                            + Add
-                          </button>
-                        )}
+                        {(() => {
+                          const itemCartEntries = Object.values(cart).filter((c) => c.id === item.id);
+                          const totalItemQty = itemCartEntries.reduce((sum, c) => sum + c.quantity, 0);
+                          const hasCustomizations = (item.variants && item.variants.length > 0) || (item.addons && item.addons.length > 0);
+
+                          return totalItemQty > 0 ? (
+                            <div className="mt-2 flex flex-col items-center">
+                              <div className="flex items-center space-x-2 px-3 py-1 rounded-xl btn-purple text-white text-xs font-black shadow-md">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const lastEntry = itemCartEntries[itemCartEntries.length - 1];
+                                    if (lastEntry) removeFromCart(lastEntry.cartKey);
+                                  }}
+                                  className="px-1 text-base font-bold"
+                                >
+                                  -
+                                </button>
+                                <span>{totalItemQty}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCustomization(item)}
+                                  className="px-1 text-base font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              {hasCustomizations && (
+                                <span className="text-[9px] font-extrabold text-purple-600 mt-0.5">Customisable</span>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCustomization(item)}
+                              className="mt-2 px-4 py-1.5 rounded-xl btn-purple text-white font-extrabold text-xs shadow-md hover:scale-105 transition-all flex items-center space-x-1 uppercase"
+                            >
+                              <span>+ Add</span>
+                              {hasCustomizations && <span className="text-[9px] font-black text-purple-200 ml-0.5">*</span>}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
@@ -415,6 +478,136 @@ export default function CustomerMenuPage() {
           </div>
         </div>
       )}
+
+      {/* Customization Modal / Drawer for Variants & Add-ons */}
+      <AnimatePresence>
+        {selectedMenuItemForCustomization && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedMenuItemForCustomization(null)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-md cursor-pointer"
+            />
+
+            {/* Glossy Drawer Content */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="relative w-full max-w-md bg-white rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl border border-white space-y-5 z-10 max-h-[85vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                <div>
+                  <h3 className="font-black text-lg text-slate-900 leading-snug">
+                    {selectedMenuItemForCustomization.itemName}
+                  </h3>
+                  <span className="text-xs font-bold text-purple-700">Customise Portions & Add-ons</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMenuItemForCustomization(null)}
+                  className="p-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Variants Option Selection */}
+              {selectedMenuItemForCustomization.variants && selectedMenuItemForCustomization.variants.length > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                    Choose Size / Portion *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedMenuItemForCustomization.variants.map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVariant(v)}
+                        className={`p-3 rounded-2xl text-xs font-bold border transition-all flex items-center justify-between ${
+                          selectedVariant?.id === v.id
+                            ? "btn-purple text-white shadow-md border-purple-600"
+                            : "glass-pill text-slate-700 border-purple-100"
+                        }`}
+                      >
+                        <span>{v.variantName}</span>
+                        <span>₹{parseFloat(v.price).toFixed(2)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add-ons Option Selection */}
+              {selectedMenuItemForCustomization.addons && selectedMenuItemForCustomization.addons.length > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                    Add-ons & Extra Toppings
+                  </label>
+                  <div className="space-y-2">
+                    {selectedMenuItemForCustomization.addons.map((addon) => {
+                      const isSelected = !!selectedAddonsMap[addon.id];
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAddonsMap((prev) => ({
+                              ...prev,
+                              [addon.id]: isSelected ? null : addon,
+                            }));
+                          }}
+                          className={`w-full p-3.5 rounded-2xl text-xs font-bold border transition-all flex items-center justify-between ${
+                            isSelected
+                              ? "bg-purple-100 text-purple-900 border-purple-300 shadow-sm"
+                              : "glass-pill text-slate-700 border-purple-100"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2.5">
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${isSelected ? "bg-purple-600 border-purple-600 text-white" : "border-slate-300 bg-white"}`}>
+                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                            </div>
+                            <span>{addon.addonName}</span>
+                          </div>
+                          <span className="text-purple-700 font-black">+₹{parseFloat(addon.price).toFixed(2)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Add Customized Item CTA */}
+              {(() => {
+                const base = selectedVariant
+                  ? parseFloat(selectedVariant.price)
+                  : selectedMenuItemForCustomization.discountPrice
+                  ? parseFloat(selectedMenuItemForCustomization.discountPrice)
+                  : parseFloat(selectedMenuItemForCustomization.price);
+
+                const addonsList = Object.values(selectedAddonsMap).filter(Boolean);
+                const addonsSum = addonsList.reduce((s, a) => s + parseFloat(a.price), 0);
+                const itemTotal = base + addonsSum;
+
+                return (
+                  <button
+                    type="button"
+                    onClick={() => addToCartWithDetails(selectedMenuItemForCustomization, selectedVariant, addonsList)}
+                    className="w-full py-4 rounded-2xl btn-purple font-black text-base shadow-xl flex items-center justify-between px-6"
+                  >
+                    <span>Add Item</span>
+                    <span>₹{itemTotal.toFixed(2)}</span>
+                  </button>
+                );
+              })()}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

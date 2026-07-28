@@ -9,18 +9,58 @@ export async function POST(request) {
       mobileNo,
       name,
       restaurantId,
+      restaurantSlug,
       tableUid,
       items,
       specialNotes,
       paymentMethod = "CASH",
     } = body;
 
-    if (!mobileNo || !restaurantId || !items || !items.length) {
+    if (!mobileNo || !items || !items.length) {
       return NextResponse.json(
-        { error: "Mobile number, restaurant, and order items are required" },
+        { error: "Mobile number and order items are required" },
         { status: 400 }
       );
     }
+
+    // 0. Resolve valid target Restaurant record in database
+    let targetRestaurant = null;
+
+    if (restaurantId) {
+      targetRestaurant = await prisma.restaurant.findUnique({
+        where: { id: restaurantId },
+      });
+    }
+
+    if (!targetRestaurant && restaurantSlug) {
+      targetRestaurant = await prisma.restaurant.findUnique({
+        where: { slug: restaurantSlug },
+      });
+    }
+
+    if (!targetRestaurant && tableUid) {
+      const tableRecord = await prisma.qrManagement.findFirst({
+        where: { uid: tableUid },
+        include: { restaurant: true },
+      });
+      if (tableRecord?.restaurant) {
+        targetRestaurant = tableRecord.restaurant;
+      }
+    }
+
+    // Fallback to first existing restaurant in database if ID is missing or invalid
+    if (!targetRestaurant) {
+      targetRestaurant = await prisma.restaurant.findFirst();
+    }
+
+    if (!targetRestaurant) {
+      return NextResponse.json(
+        { error: "No active restaurant found in database to place order." },
+        { status: 404 }
+      );
+    }
+
+    const validRestaurantId = targetRestaurant.id;
 
     // 1. Resolve or Create Customer linked to this Restaurant
     let customer = await prisma.customer.findFirst({
@@ -32,7 +72,7 @@ export async function POST(request) {
         data: {
           mobileNo: mobileNo.trim(),
           name: name ? name.trim() : "Guest Diner",
-          createdFromRestaurantId: restaurantId,
+          createdFromRestaurantId: validRestaurantId,
           isVerifiedMobileNo: true,
         },
       });
@@ -42,27 +82,45 @@ export async function POST(request) {
     let qrTable = null;
     if (tableUid) {
       qrTable = await prisma.qrManagement.findFirst({
-        where: { uid: tableUid, restaurantId },
+        where: { uid: tableUid, restaurantId: validRestaurantId },
       });
+
+      if (!qrTable) {
+        qrTable = await prisma.qrManagement.findFirst({
+          where: { uid: tableUid },
+        });
+      }
     }
 
-    // 3. Calculate Totals
+    // 3. Calculate Totals and Validate Menu Item IDs
     let totalAmount = 0;
-    const formattedItems = items.map((item) => {
-      const price = parseFloat(item.itemPrice || item.price);
+    const formattedItems = [];
+
+    for (const item of items) {
+      const price = parseFloat(item.itemPrice || item.price || 0);
       const qty = parseInt(item.quantity || 1, 10);
       const subTotal = price * qty;
       totalAmount += subTotal;
 
-      return {
-        menuId: item.menuId || null,
-        itemName: item.itemName || item.name,
+      let validMenuId = item.menuId || item.id || null;
+      if (validMenuId) {
+        const menuExists = await prisma.menu.findUnique({
+          where: { id: validMenuId },
+        });
+        if (!menuExists) validMenuId = null;
+      }
+
+      formattedItems.push({
+        menuId: validMenuId,
+        itemName: item.itemName || item.name || "Menu Item",
         itemPrice: price,
+        variantName: item.variantName || null,
+        selectedAddons: item.selectedAddons || (Array.isArray(item.addons) ? item.addons.join(", ") : null),
         quantity: qty,
         subTotal: subTotal,
         specialInstructions: item.specialInstructions || null,
-      };
-    });
+      });
+    }
 
     const taxAmount = totalAmount * 0.05; // 5% GST
     const grandTotal = totalAmount + taxAmount;
@@ -73,7 +131,7 @@ export async function POST(request) {
       data: {
         orderNumber,
         customerId: customer.id,
-        restaurantId: restaurantId,
+        restaurantId: validRestaurantId,
         qrTableId: qrTable ? qrTable.id : null,
         totalAmount: totalAmount,
         taxAmount: taxAmount,
@@ -96,7 +154,7 @@ export async function POST(request) {
 
     // 5. Trigger Real-Time SSE Notification to Manager PWA
     orderEvents.emit("new-order", {
-      restaurantId: restaurantId,
+      restaurantId: validRestaurantId,
       order: {
         id: newOrder.id,
         uid: newOrder.uid,
@@ -121,6 +179,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Order Creation Error:", error);
-    return NextResponse.json({ error: "Failed to place order" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to place order" }, { status: 500 });
   }
 }
