@@ -163,19 +163,19 @@ export default function CustomerMenuPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-tight">
                 {restaurant?.restaurantName || "Spice Garden Bistro"}
               </h1>
               {tableTitle && (
-                <span className="px-2.5 py-0.5 rounded-full glass-pill text-purple-700 font-extrabold text-xs border border-purple-200 shadow-sm">
+                <span className="px-2.5 py-0.5 rounded-full glass-pill text-purple-700 font-black text-xs border border-purple-200 shadow-sm">
                   {tableTitle}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center space-x-2">
+            <p className="text-xs text-slate-700 font-bold mt-1 flex items-center space-x-2">
               <span>{restaurant?.address || "Indiranagar, Bengaluru"}</span>
               <span>•</span>
-              <span className="text-emerald-700 font-extrabold flex items-center space-x-1">
+              <span className="text-emerald-700 font-black flex items-center space-x-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                 <span>Open Now</span>
               </span>
@@ -397,20 +397,20 @@ export default function CustomerMenuPage() {
       {/* Sticky Bottom Floating Bar (Purple + White Glossy Glass) */}
       {cartTotalCount > 0 && (
         <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
-          <div className="ios-navbar-floating p-4 rounded-3xl bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-2xl border border-white/40 flex items-center justify-between">
+          <div className="ios-navbar-floating p-4 rounded-3xl bg-white/95 backdrop-blur-2xl text-slate-900 shadow-2xl border border-white flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-200">
+              <span className="text-[11px] font-black uppercase tracking-wider text-purple-700">
                 {cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"} Selected
               </span>
-              <div className="font-black text-xl">₹{cartTotalPrice.toFixed(2)}</div>
+              <div className="font-black text-2xl text-slate-900">₹{cartTotalPrice.toFixed(2)}</div>
             </div>
 
             <Link
               href="/restaurant/checkout"
-              className="px-6 py-3 rounded-2xl bg-white text-purple-900 font-black text-sm shadow-md hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+              className="px-6 py-3 rounded-2xl btn-purple text-white font-black text-sm shadow-md hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
             >
               <span>View Cart</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 text-purple-200" />
             </Link>
           </div>
         </div>

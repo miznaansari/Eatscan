@@ -133,8 +133,8 @@ export default function CheckoutPage() {
 
       <main className="max-w-md mx-auto px-4 pt-6 space-y-6">
         {/* Order Items List */}
-        <section className="glass-card p-5 rounded-2xl bg-white space-y-4 border border-purple-100 shadow-sm">
-          <h2 className="font-extrabold text-base text-slate-900 border-b pb-2">Order Items</h2>
+        <section className="glass-card p-5 rounded-3xl space-y-4 border border-white/90 shadow-md">
+          <h2 className="font-extrabold text-base text-slate-900 border-b border-purple-100 pb-2">Order Items</h2>
           <div className="space-y-3">
             {cart.map((item) => (
               <div key={item.id} className="flex items-center justify-between text-xs font-semibold">
@@ -144,26 +144,26 @@ export default function CheckoutPage() {
                   </span>
                   <span className="font-bold text-slate-800">{item.name}</span>
                 </div>
-                <span className="font-mono text-slate-900 font-bold">₹{(item.price * item.quantity).toFixed(2)}</span>
+                <span className="font-mono text-slate-900 font-black text-xs">₹{(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>
         </section>
 
         {/* Special Notes Input */}
-        <section className="glass-card p-5 rounded-2xl bg-white space-y-2 border border-purple-100 shadow-sm">
+        <section className="glass-card p-5 rounded-3xl space-y-2 border border-white/90 shadow-md">
           <label className="block text-xs font-bold text-slate-700 uppercase">Special Cooking Instructions</label>
           <input
             type="text"
             placeholder="e.g. Less spicy, extra sauce..."
             value={specialNotes}
             onChange={(e) => setSpecialNotes(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl glass-input text-xs font-medium focus:outline-none"
+            className="w-full px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none"
           />
         </section>
 
         {/* Payment Method Selector */}
-        <section className="glass-card p-5 rounded-2xl bg-white space-y-3 border border-purple-100 shadow-sm">
+        <section className="glass-card p-5 rounded-3xl space-y-3 border border-white/90 shadow-md">
           <h3 className="font-extrabold text-xs text-slate-700 uppercase">Select Payment Mode</h3>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -171,7 +171,7 @@ export default function CheckoutPage() {
               className={`p-3 rounded-xl text-xs font-bold border text-center transition-all ${
                 paymentMethod === "CASH"
                   ? "btn-purple shadow-md"
-                  : "bg-purple-50/50 text-slate-700 border-purple-100"
+                  : "glass-pill text-slate-700 border-purple-100"
               }`}
             >
               Pay Cash at Table
@@ -181,7 +181,7 @@ export default function CheckoutPage() {
               className={`p-3 rounded-xl text-xs font-bold border text-center transition-all ${
                 paymentMethod === "UPI"
                   ? "btn-purple shadow-md"
-                  : "bg-purple-50/50 text-slate-700 border-purple-100"
+                  : "glass-pill text-slate-700 border-purple-100"
               }`}
             >
               UPI / Online
@@ -190,18 +190,18 @@ export default function CheckoutPage() {
         </section>
 
         {/* Bill Breakdown */}
-        <section className="glass-card p-5 rounded-2xl bg-white space-y-2.5 text-xs border border-purple-100 shadow-sm">
-          <div className="flex justify-between text-slate-600">
+        <section className="glass-card p-5 rounded-3xl space-y-2.5 text-xs border border-white/90 shadow-md">
+          <div className="flex justify-between text-slate-600 font-medium">
             <span>Item Total</span>
-            <span>₹{totalAmount.toFixed(2)}</span>
+            <span className="font-bold text-slate-900">₹{totalAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-slate-600 font-medium">
             <span>GST & Service Charges (5%)</span>
-            <span>₹{taxAmount.toFixed(2)}</span>
+            <span className="font-bold text-slate-900">₹{taxAmount.toFixed(2)}</span>
           </div>
-          <div className="border-t pt-2 flex justify-between font-black text-sm text-slate-900">
+          <div className="border-t border-purple-100 pt-2 flex justify-between font-black text-sm text-slate-900">
             <span>To Pay</span>
-            <span className="text-purple-700">₹{grandTotal.toFixed(2)}</span>
+            <span className="text-slate-900 text-base font-black">₹{grandTotal.toFixed(2)}</span>
           </div>
         </section>
       </main>

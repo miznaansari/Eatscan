@@ -120,7 +120,7 @@ export default function OrderStatusPage() {
         </section>
 
         {/* Live Stepper */}
-        <section className="glass-card p-6 rounded-2xl bg-white space-y-4 border border-purple-100 shadow-sm">
+        <section className="glass-card p-6 rounded-3xl space-y-4 border border-white/90 shadow-md">
           <h3 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">Kitchen Live Progress</h3>
 
           <div className="relative flex items-center justify-between text-center px-2">
@@ -131,49 +131,49 @@ export default function OrderStatusPage() {
             />
 
             <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 1 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-500"}`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 1 ? "bg-purple-600 text-white shadow-sm" : "bg-purple-100 text-purple-500"}`}>
                 1
               </div>
-              <span className="text-[10px] font-bold mt-1">Sent</span>
+              <span className="text-[10px] font-bold mt-1 text-slate-700">Sent</span>
             </div>
 
             <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 2 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-500"}`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 2 ? "bg-purple-600 text-white shadow-sm" : "bg-purple-100 text-purple-500"}`}>
                 2
               </div>
-              <span className="text-[10px] font-bold mt-1">Accepted</span>
+              <span className="text-[10px] font-bold mt-1 text-slate-700">Accepted</span>
             </div>
 
             <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 3 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-500"}`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 3 ? "bg-purple-600 text-white shadow-sm" : "bg-purple-100 text-purple-500"}`}>
                 3
               </div>
-              <span className="text-[10px] font-bold mt-1">Cooking</span>
+              <span className="text-[10px] font-bold mt-1 text-slate-700">Cooking</span>
             </div>
 
             <div className="relative z-10 flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 4 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-500"}`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 4 ? "bg-purple-600 text-white shadow-sm" : "bg-purple-100 text-purple-500"}`}>
                 4
               </div>
-              <span className="text-[10px] font-bold mt-1">Served</span>
+              <span className="text-[10px] font-bold mt-1 text-slate-700">Served</span>
             </div>
           </div>
         </section>
 
         {/* Itemized Order Receipt */}
-        <section className="glass-card p-5 rounded-2xl bg-white space-y-3 border border-purple-100 shadow-sm">
+        <section className="glass-card p-5 rounded-3xl space-y-3 border border-white/90 shadow-md">
           <h3 className="font-extrabold text-xs text-slate-700 uppercase">Ordered Dishes</h3>
           <div className="space-y-2">
             {order.items?.map((item) => (
               <div key={item.id} className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-800">{item.quantity}x {item.itemName}</span>
-                <span className="font-mono text-slate-900 font-bold">₹{parseFloat(item.subTotal).toFixed(2)}</span>
+                <span className="text-slate-800 font-bold">{item.quantity}x {item.itemName}</span>
+                <span className="font-mono text-slate-900 font-black">₹{parseFloat(item.subTotal).toFixed(2)}</span>
               </div>
             ))}
           </div>
-          <div className="border-t pt-2 flex justify-between font-black text-sm text-slate-900">
+          <div className="border-t border-purple-100 pt-2 flex justify-between font-black text-sm text-slate-900">
             <span>Grand Total</span>
-            <span className="text-purple-700">₹{parseFloat(order.grandTotal).toFixed(2)}</span>
+            <span className="text-slate-900 text-base font-black">₹{parseFloat(order.grandTotal).toFixed(2)}</span>
           </div>
         </section>
       </main>
