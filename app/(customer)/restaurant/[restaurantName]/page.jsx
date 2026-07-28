@@ -159,7 +159,7 @@ export default function CustomerMenuPage() {
       )}
 
       {/* Header Banner */}
-      <header className="glass-card sticky top-0 z-40 border-b border-purple-100 px-4 py-4 shadow-sm bg-white/90">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-2">

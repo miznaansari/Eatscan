@@ -83,7 +83,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-screen pb-20 bg-purple-50/30 text-slate-900">
-      <header className="glass-card sticky top-0 z-40 border-b border-purple-100 px-4 py-3 bg-white/90">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <button onClick={() => router.push("/")} className="p-2 rounded-xl bg-purple-50 text-purple-700">
             <ArrowLeft className="w-5 h-5" />

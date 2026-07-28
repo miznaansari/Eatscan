@@ -24,7 +24,7 @@ export default function SuperAdminDashboard() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50 text-slate-900">
       {/* Super Admin Topbar */}
-      <header className="sticky top-0 z-40 glass-card border-b border-slate-200/80 px-4 py-4 bg-white/90">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/20">

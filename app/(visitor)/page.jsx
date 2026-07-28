@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
 
         {/* Live Demo Teaser Card */}
-        <div className="mt-16 max-w-4xl mx-auto glass-card-purple p-6 sm:p-8 rounded-3xl border border-purple-100 shadow-2xl relative overflow-hidden text-left bg-white">
+        <div className="mt-16 max-w-4xl mx-auto glass-card-purple p-6 sm:p-8 rounded-3xl border border-purple-100 shadow-2xl relative overflow-hidden text-left">
           <div className="flex items-center justify-between border-b border-purple-100 pb-4 mb-6">
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 rounded-full bg-purple-600 animate-ping" />
@@ -57,7 +57,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Step 1 */}
-            <div className="glass-card p-5 rounded-2xl border border-purple-100 bg-white">
+            <div className="glass-card p-5 rounded-2xl border border-purple-100">
               <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
                 <QrCode className="w-6 h-6" />
               </div>
@@ -66,7 +66,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 2 */}
-            <div className="glass-card p-5 rounded-2xl border border-purple-100 bg-white">
+            <div className="glass-card p-5 rounded-2xl border border-purple-100">
               <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
                 <Smartphone className="w-6 h-6" />
               </div>
@@ -75,7 +75,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 3 */}
-            <div className="glass-card p-5 rounded-2xl border border-purple-100 bg-white">
+            <div className="glass-card p-5 rounded-2xl border border-purple-100">
               <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
                 <BellRing className="w-6 h-6 text-purple-600 animate-bounce" />
               </div>
@@ -88,7 +88,7 @@ export default function LandingPage() {
 
       {/* Multi-Slot Timings Highlight */}
       <section id="timings" className="max-w-7xl mx-auto px-4">
-        <div className="glass-card p-8 lg:p-12 rounded-3xl border border-purple-100 shadow-xl bg-gradient-to-r from-purple-50 via-white to-purple-50 text-slate-900 relative overflow-hidden">
+        <div className="glass-card p-8 lg:p-12 rounded-3xl border border-purple-100 shadow-xl bg-gradient-to-r from-purple-50/80 via-white/80 to-purple-50/80 text-slate-900 relative overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-extrabold mb-4 border border-purple-200">
@@ -118,7 +118,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl bg-white border border-purple-100 text-slate-900 shadow-md">
+            <div className="glass-card p-6 rounded-2xl border border-purple-100 text-slate-900 shadow-md">
               <h4 className="font-extrabold text-slate-900 text-lg mb-4 flex items-center justify-between">
                 <span>Spice Garden Bistro Operating Hours</span>
                 <span className="text-xs px-2.5 py-1 rounded-full bg-purple-600 text-white font-bold">OPEN NOW</span>
@@ -126,11 +126,11 @@ export default function LandingPage() {
               <div className="space-y-3 text-sm font-semibold">
                 <div className="p-3.5 rounded-xl bg-purple-50/60 text-slate-800 flex items-center justify-between border border-purple-100">
                   <span className="font-bold">Monday - Sunday (Lunch)</span>
-                  <span className="font-mono text-purple-700 bg-white px-2.5 py-1 rounded-lg border border-purple-200 font-bold">11:00 AM - 03:30 PM</span>
+                  <span className="font-mono text-purple-700 glass-pill px-2.5 py-1 rounded-lg border border-purple-200 font-bold">11:00 AM - 03:30 PM</span>
                 </div>
                 <div className="p-3.5 rounded-xl bg-purple-50/60 text-slate-800 flex items-center justify-between border border-purple-100">
                   <span className="font-bold">Monday - Sunday (Dinner)</span>
-                  <span className="font-mono text-purple-700 bg-white px-2.5 py-1 rounded-lg border border-purple-200 font-bold">07:00 PM - 11:00 PM</span>
+                  <span className="font-mono text-purple-700 glass-pill px-2.5 py-1 rounded-lg border border-purple-200 font-bold">07:00 PM - 11:00 PM</span>
                 </div>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all bg-white">
+          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md shadow-purple-500/20">
               <Flame className="w-6 h-6" />
             </div>
@@ -156,7 +156,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all bg-white">
+          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md shadow-purple-500/20">
               <BellRing className="w-6 h-6" />
             </div>
@@ -166,7 +166,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all bg-white">
+          <div className="glass-card p-8 rounded-3xl border border-purple-100 hover:shadow-xl transition-all">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md shadow-purple-500/20">
               <ShieldCheck className="w-6 h-6" />
             </div>
@@ -180,7 +180,7 @@ export default function LandingPage() {
 
       {/* Call to Action */}
       <section className="max-w-5xl mx-auto px-4 text-center">
-        <div className="glass-card-purple p-10 sm:p-14 rounded-3xl border border-purple-100 shadow-2xl relative overflow-hidden bg-white">
+        <div className="glass-card-purple p-10 sm:p-14 rounded-3xl border border-purple-100 shadow-2xl relative overflow-hidden">
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900">Ready to Upgrade Your Restaurant?</h2>
           <p className="text-slate-600 mt-4 text-base sm:text-lg font-medium max-w-2xl mx-auto">
             Get started with EatScan.online in less than 2 minutes. Upload raw menu images and generate instant table QR codes.

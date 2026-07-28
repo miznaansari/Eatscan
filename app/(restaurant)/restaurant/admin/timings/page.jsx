@@ -78,7 +78,7 @@ export default function ManagerTimingsPage() {
 
   return (
     <div className="min-h-screen pb-20 bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-40 glass-card border-b border-slate-200/80 px-4 py-3 bg-white/90">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link href="/restaurant/admin/dashboard" className="p-2 rounded-xl bg-slate-100 text-slate-700">
