@@ -84,8 +84,9 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Failed to place order");
       }
 
-      // Clear cart
+      // Clear cart & store latest order UID
       localStorage.removeItem("eatscan_cart");
+      localStorage.setItem("eatscan_latest_order_uid", data.orderUid);
 
       // Redirect to Order Success & Live Tracker
       router.push(`/restaurant/order/${data.orderUid}`);

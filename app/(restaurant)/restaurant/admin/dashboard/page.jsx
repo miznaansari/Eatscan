@@ -106,9 +106,14 @@ export default function ManagerDashboardPage() {
       });
 
       if (res.ok) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
-        );
+        if (newStatus === "COMPLETED" || newStatus === "CANCELLED") {
+          setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        } else {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+          );
+        }
+        if (newOrderAlert?.id === orderId) setNewOrderAlert(null);
       }
     } catch (err) {
       console.error("Update status error:", err);
@@ -124,12 +129,14 @@ export default function ManagerDashboardPage() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="glass-navbar sticky top-0 z-40 px-4 py-3">
+      <header className="glass-navbar sticky top-0 z-40 px-4 py-3 shadow-md backdrop-blur-2xl">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-extrabold shadow-md">
-              <Utensils className="w-5 h-5" />
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="EatScan Logo"
+              className="w-10 h-10 rounded-2xl shadow-md object-contain"
+            />
             <div>
               <h1 className="font-black text-slate-900 text-lg leading-tight">{restaurantName}</h1>
               <div className="flex items-center space-x-2 text-xs font-bold text-emerald-600">
@@ -155,22 +162,6 @@ export default function ManagerDashboardPage() {
             </button>
           </div>
         </div>
-
-        {/* Navigation Tabs */}
-        <nav className="max-w-4xl mx-auto flex items-center space-x-2 mt-3 text-xs font-bold border-t pt-2 overflow-x-auto pb-1 whitespace-nowrap">
-          <Link href="/restaurant/admin/dashboard" className="px-3 py-1.5 rounded-lg bg-slate-900 text-white">
-            Live Orders
-          </Link>
-          <Link href="/restaurant/admin/menu" className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
-            Menu Catalog
-          </Link>
-          <Link href="/restaurant/admin/table" className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
-            QR Tables
-          </Link>
-          <Link href="/restaurant/admin/timings" className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
-            Multi-Slot Hours
-          </Link>
-        </nav>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
@@ -200,21 +191,27 @@ export default function ManagerDashboardPage() {
         )}
 
         {/* Active Orders List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Orders</h2>
-            <span className="text-xs font-extrabold text-slate-500">{orders.length} Total</span>
-          </div>
+        {(() => {
+          const activeOrders = orders.filter(
+            (o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED"
+          );
 
-          {orders.length === 0 ? (
-            <div className="glass-card p-12 rounded-3xl text-center space-y-2 border border-slate-200">
-              <ChefHat className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="font-extrabold text-slate-700 text-base">No Orders Yet</h3>
-              <p className="text-xs text-slate-500">Scan a table QR code from customer app to place sample order.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {orders.map((order) => {
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Orders</h2>
+                <span className="text-xs font-extrabold text-slate-500">{activeOrders.length} Active</span>
+              </div>
+
+              {activeOrders.length === 0 ? (
+                <div className="glass-card p-12 rounded-3xl text-center space-y-2 border border-slate-200 bg-white">
+                  <ChefHat className="w-12 h-12 text-slate-300 mx-auto" />
+                  <h3 className="font-extrabold text-slate-700 text-base">No Active Orders</h3>
+                  <p className="text-xs text-slate-500">All active orders completed! Scan a table QR code to place new orders.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeOrders.map((order) => {
                 const tableTitle = order.tableTitle || order.qrTable?.tableTitle || "Direct Table";
                 const isPending = order.orderStatus === "PENDING";
 
@@ -317,6 +314,8 @@ export default function ManagerDashboardPage() {
             </div>
           )}
         </div>
+      );
+    })()}
       </main>
     </div>
   );
