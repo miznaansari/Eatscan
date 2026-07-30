@@ -68,6 +68,8 @@ export default function CheckoutPage() {
           itemName: i.name,
           itemPrice: i.price,
           quantity: i.quantity,
+          variantName: i.variantName || null,
+          selectedAddons: i.selectedAddons || null,
         })),
         specialNotes,
         paymentMethod,
@@ -98,14 +100,14 @@ export default function CheckoutPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-purple-50/30">
-        <div className="glass-card p-8 rounded-3xl text-center space-y-4 max-w-sm w-full">
-          <ShoppingBag className="w-16 h-16 text-purple-300 mx-auto" />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white text-slate-950">
+        <div className="bg-slate-50 p-8 rounded-3xl text-center space-y-4 max-w-sm w-full border border-slate-200 shadow-sm">
+          <ShoppingBag className="w-16 h-16 text-purple-600 mx-auto" />
           <h2 className="text-xl font-black text-slate-900">Your Cart is Empty</h2>
           <p className="text-xs text-slate-500 font-medium">Add delicious dishes from the menu to proceed.</p>
           <Link
             href={`/restaurant/spice-garden`}
-            className="inline-block px-6 py-3 rounded-xl btn-purple font-bold text-xs"
+            className="inline-block px-6 py-3 rounded-2xl bg-purple-600 text-white font-black text-xs shadow-md hover:bg-purple-700 transition-all"
           >
             Browse Menu
           </Link>
@@ -115,19 +117,19 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen pb-28 bg-purple-50/30 text-slate-900">
+    <div className="min-h-screen pb-28 bg-white text-slate-950 selection:bg-purple-600 selection:text-white">
       {/* Top Bar */}
-      <header className="glass-navbar sticky-header sticky top-0 z-40 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-xs">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100"
+            className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="text-center">
-            <h1 className="text-base font-black text-slate-900">Checkout</h1>
-            <span className="text-xs text-purple-700 font-extrabold">{restaurantName} • {tableTitle}</span>
+            <h1 className="text-base font-black text-slate-900">Checkout Summary</h1>
+            <span className="text-xs text-purple-700 font-black">{restaurantName} • {tableTitle}</span>
           </div>
           <div className="w-9" />
         </div>
@@ -135,7 +137,7 @@ export default function CheckoutPage() {
 
       <main className="max-w-md mx-auto px-4 pt-6 space-y-6">
         {/* Order Items List */}
-        <section className="glass-card p-5 rounded-3xl space-y-4 border border-white/90 shadow-md">
+        <section className="bg-white p-5 rounded-3xl space-y-4 border border-slate-200 shadow-xs">
           <h2 className="font-extrabold text-base text-slate-900 border-b border-purple-100 pb-2">Order Items</h2>
           <div className="space-y-3">
             {cart.map((item, idx) => (
@@ -161,37 +163,37 @@ export default function CheckoutPage() {
         </section>
 
         {/* Special Notes Input */}
-        <section className="glass-card p-5 rounded-3xl space-y-2 border border-white/90 shadow-md">
-          <label className="block text-xs font-bold text-slate-700 uppercase">Special Cooking Instructions</label>
+        <section className="bg-white p-5 rounded-3xl space-y-2 border border-slate-200 shadow-xs">
+          <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">Special Cooking Instructions</label>
           <input
             type="text"
             placeholder="e.g. Less spicy, extra sauce..."
             value={specialNotes}
             onChange={(e) => setSpecialNotes(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none"
+            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
           />
         </section>
 
         {/* Payment Method Selector */}
-        <section className="glass-card p-5 rounded-3xl space-y-3 border border-white/90 shadow-md">
-          <h3 className="font-extrabold text-xs text-slate-700 uppercase">Select Payment Mode</h3>
+        <section className="bg-white p-5 rounded-3xl space-y-3 border border-slate-200 shadow-xs">
+          <h3 className="font-black text-xs text-slate-700 uppercase tracking-wider">Select Payment Mode</h3>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setPaymentMethod("CASH")}
-              className={`p-3 rounded-xl text-xs font-bold border text-center transition-all ${
+              className={`p-3.5 rounded-2xl text-xs font-black border text-center transition-all ${
                 paymentMethod === "CASH"
-                  ? "btn-purple shadow-md"
-                  : "glass-pill text-slate-700 border-purple-100"
+                  ? "bg-purple-600 text-white border-purple-600 shadow-md"
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
               }`}
             >
               Pay Cash at Table
             </button>
             <button
               onClick={() => setPaymentMethod("UPI")}
-              className={`p-3 rounded-xl text-xs font-bold border text-center transition-all ${
+              className={`p-3.5 rounded-2xl text-xs font-black border text-center transition-all ${
                 paymentMethod === "UPI"
-                  ? "btn-purple shadow-md"
-                  : "glass-pill text-slate-700 border-purple-100"
+                  ? "bg-purple-600 text-white border-purple-600 shadow-md"
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
               }`}
             >
               UPI / Online
@@ -200,18 +202,18 @@ export default function CheckoutPage() {
         </section>
 
         {/* Bill Breakdown */}
-        <section className="glass-card p-5 rounded-3xl space-y-2.5 text-xs border border-white/90 shadow-md">
-          <div className="flex justify-between text-slate-600 font-medium">
+        <section className="bg-white p-5 rounded-3xl space-y-2.5 text-xs border border-slate-200 shadow-xs">
+          <div className="flex justify-between text-slate-600 font-bold">
             <span>Item Total</span>
-            <span className="font-bold text-slate-900">₹{totalAmount.toFixed(2)}</span>
+            <span className="font-black text-slate-900">₹{totalAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-slate-600 font-medium">
+          <div className="flex justify-between text-slate-600 font-bold">
             <span>GST & Service Charges (5%)</span>
-            <span className="font-bold text-slate-900">₹{taxAmount.toFixed(2)}</span>
+            <span className="font-black text-slate-900">₹{taxAmount.toFixed(2)}</span>
           </div>
-          <div className="border-t border-purple-100 pt-2 flex justify-between font-black text-sm text-slate-900">
+          <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
             <span>To Pay</span>
-            <span className="text-slate-900 text-base font-black">₹{grandTotal.toFixed(2)}</span>
+            <span className="text-slate-950 text-base font-black">₹{grandTotal.toFixed(2)}</span>
           </div>
         </section>
       </main>
@@ -220,7 +222,7 @@ export default function CheckoutPage() {
       <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto">
         <button
           onClick={handleOpenDrawer}
-          className="w-full py-4 rounded-2xl btn-purple font-black text-base shadow-xl flex items-center justify-center space-x-2"
+          className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-base shadow-xl flex items-center justify-center space-x-2 transition-all active:scale-98"
         >
           <Sparkles className="w-5 h-5 text-purple-200" />
           <span>Proceed to Place Order (₹{grandTotal.toFixed(2)})</span>

@@ -29,10 +29,7 @@ export default function QRResolvePage() {
         localStorage.setItem("eatscan_restaurant_name", data.restaurantName);
 
         setStatus(`Found ${data.tableTitle} at ${data.restaurantName}! Redirecting...`);
-
-        setTimeout(() => {
-          router.push(`/restaurant/${data.restaurantSlug}`);
-        }, 800);
+        router.replace(`/restaurant/${data.restaurantSlug}`);
       } catch (err) {
         setError(err.message);
       }

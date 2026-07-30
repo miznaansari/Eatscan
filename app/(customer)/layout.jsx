@@ -16,6 +16,7 @@ export default function CustomerLayout({ children }) {
   const [restaurantSlug, setRestaurantSlug] = useState("spice-garden");
   const [tableTitle, setTableTitle] = useState("Table 01");
   const [latestOrderUid, setLatestOrderUid] = useState(null);
+  const [hasPendingOrder, setHasPendingOrder] = useState(false);
   const [serviceRequested, setServiceRequested] = useState(false);
 
   useEffect(() => {
@@ -47,7 +48,29 @@ export default function CustomerLayout({ children }) {
     if (savedName) setRestaurantName(savedName);
     if (savedSlug) setRestaurantSlug(savedSlug);
     if (savedTable) setTableTitle(savedTable);
-    if (savedOrder) setLatestOrderUid(savedOrder);
+
+    if (savedOrder) {
+      setLatestOrderUid(savedOrder);
+      // Fetch order status to check if it's currently pending/active
+      fetch(`/api/customer/order/${savedOrder}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.order) {
+            const status = data.order.orderStatus;
+            const activeStatuses = ["PENDING", "ACCEPTED", "PREPARING", "SERVED"];
+            if (activeStatuses.includes(status)) {
+              setHasPendingOrder(true);
+            } else {
+              setHasPendingOrder(false);
+            }
+          } else {
+            setHasPendingOrder(false);
+          }
+        })
+        .catch(() => setHasPendingOrder(false));
+    } else {
+      setHasPendingOrder(false);
+    }
 
     return () => window.removeEventListener("storage", updateCartState);
   }, [pathname]);
@@ -104,18 +127,23 @@ export default function CustomerLayout({ children }) {
             <span className="text-[10px] tracking-tight">Cart</span>
           </Link>
 
-          {/* Track Order Tab */}
-          <Link
-            href={orderUrl}
-            className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
-              pathname.includes("/order/")
-                ? "text-purple-700 font-extrabold bg-purple-50"
-                : "text-slate-500 font-semibold hover:text-purple-600"
-            }`}
-          >
-            <Receipt className="w-5 h-5 mb-0.5" />
-            <span className="text-[10px] tracking-tight">Order Status</span>
-          </Link>
+          {/* Track Order Tab - ONLY SHOWN IF USER HAS PENDING ORDER */}
+          {hasPendingOrder && (
+            <Link
+              href={orderUrl}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all relative ${
+                pathname.includes("/order/")
+                  ? "text-purple-700 font-extrabold bg-purple-50"
+                  : "text-slate-500 font-semibold hover:text-purple-600"
+              }`}
+            >
+              <div className="relative">
+                <Receipt className="w-5 h-5 mb-0.5" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping" />
+              </div>
+              <span className="text-[10px] tracking-tight font-bold text-purple-700">Live Order</span>
+            </Link>
+          )}
 
           {/* More (3-Line Hamburger Drawer Trigger) */}
           <button

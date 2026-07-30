@@ -58,6 +58,8 @@ export async function POST(request) {
       type,
       restaurantId,
       categoryName,
+      categoryImage,
+      description,
       itemName,
       price,
       discountPrice,
@@ -72,6 +74,8 @@ export async function POST(request) {
       const newCat = await prisma.menuCategory.create({
         data: {
           categoryName,
+          categoryImage: categoryImage || null,
+          description: description || null,
           restaurantId,
         },
       });

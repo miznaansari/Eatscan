@@ -13,6 +13,7 @@ export default function ManagerMenuPage() {
 
   // New Category state
   const [newCatName, setNewCatName] = useState("");
+  const [newCatImage, setNewCatImage] = useState("");
 
   // New Item state
   const [itemName, setItemName] = useState("");
@@ -61,11 +62,13 @@ export default function ManagerMenuPage() {
           type: "CATEGORY",
           restaurantId,
           categoryName: newCatName,
+          categoryImage: newCatImage,
         }),
       });
 
       if (res.ok) {
         setNewCatName("");
+        setNewCatImage("");
         fetchMenu(restaurantId);
       }
     } catch (e) {
@@ -142,17 +145,25 @@ export default function ManagerMenuPage() {
         {/* Create Category Form */}
         <section className="glass-card p-5 rounded-2xl bg-white border border-white/80 shadow-sm space-y-3">
           <h2 className="font-extrabold text-sm text-slate-900 uppercase">1. Add Menu Category</h2>
-          <form onSubmit={handleAddCategory} className="flex gap-2">
+          <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              placeholder="Category Name (e.g. Desserts, Cold Drinks)"
+              required
+              placeholder="Category Name (e.g. Desserts, Starters)"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
               className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
+            <input
+              type="url"
+              placeholder="Category Image URL (optional)"
+              value={newCatImage}
+              onChange={(e) => setNewCatImage(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 flex items-center space-x-1"
+              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 flex items-center justify-center space-x-1"
             >
               <Plus className="w-4 h-4" />
               <span>Add Category</span>

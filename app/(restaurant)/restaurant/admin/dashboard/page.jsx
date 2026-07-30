@@ -170,27 +170,27 @@ export default function ManagerDashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        {/* Real-time Order Alert Banner - High Contrast & Maximum Readability */}
+        {/* Real-time Order Alert Toast (Matching Customer Layout Pearl Glass Theme) */}
         {newOrderAlert && (
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-950 text-white shadow-2xl border-2 border-amber-400 flex items-center justify-between animate-bounce">
+          <div className="ios-navbar-floating p-4 sm:p-5 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl flex items-center justify-between animate-bounce">
             <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex flex-shrink-0 items-center justify-center font-black shadow-lg shadow-amber-400/30">
-                <BellRing className="w-7 h-7 text-slate-950 animate-bounce" />
+              <div className="w-12 h-12 rounded-2xl btn-purple text-white flex flex-shrink-0 items-center justify-center font-black shadow-lg shadow-purple-500/25">
+                <BellRing className="w-6 h-6 text-purple-100 animate-bounce" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-extrabold text-[10px] uppercase tracking-wider border border-purple-200 shadow-sm">
                     ⚡ NEW ORDER ARRIVED!
                   </span>
-                  <span className="text-xs font-black text-purple-300">
+                  <span className="text-xs font-black text-purple-700 font-mono">
                     #{newOrderAlert.orderNumber}
                   </span>
                 </div>
-                <h3 className="font-black text-lg text-white mt-1">
+                <h3 className="font-black text-lg text-slate-900 mt-1">
                   {newOrderAlert.tableTitle || "Direct Table"}
                 </h3>
-                <p className="text-xs font-extrabold text-slate-300 mt-0.5">
-                  {newOrderAlert.customerName || "Guest Diner"} • <span className="text-amber-300 font-mono text-sm font-black">₹{parseFloat(newOrderAlert.grandTotal).toFixed(2)}</span>
+                <p className="text-xs font-extrabold text-slate-600 mt-0.5">
+                  {newOrderAlert.customerName || "Guest Diner"} • <span className="text-purple-700 font-mono text-sm font-black">₹{parseFloat(newOrderAlert.grandTotal).toFixed(2)}</span>
                 </p>
               </div>
             </div>
@@ -199,7 +199,7 @@ export default function ManagerDashboardPage() {
               <button
                 disabled={!!updatingOrderIds[newOrderAlert.id]}
                 onClick={() => updateOrderStatus(newOrderAlert.id, "ACCEPTED")}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
+                className="btn-purple px-5 py-3 rounded-2xl text-white font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
               >
                 {updatingOrderIds[newOrderAlert.id] ? (
                   <>
@@ -212,7 +212,7 @@ export default function ManagerDashboardPage() {
               </button>
               <button
                 onClick={() => setNewOrderAlert(null)}
-                className="p-2.5 rounded-2xl bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                className="p-2.5 rounded-2xl glass-pill text-slate-400 hover:text-slate-700 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
