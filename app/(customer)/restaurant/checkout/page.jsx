@@ -23,6 +23,8 @@ import {
   Laptop,
   Plus,
   Minus,
+  UserCheck,
+  Edit2,
 } from "lucide-react";
 
 export default function CheckoutPage() {
@@ -45,10 +47,11 @@ export default function CheckoutPage() {
   // Payment method selection (default is CASH)
   const [paymentMethod, setPaymentMethod] = useState("CASH");
 
-  // Mobile drawer state
+  // Mobile drawer & Customer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [mobileNo, setMobileNo] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,13 +77,30 @@ export default function CheckoutPage() {
       } catch (e) {}
     }
 
-    setRestaurantId(localStorage.getItem("eatscan_restaurant_id") || "");
-    setRestaurantName(localStorage.getItem("eatscan_restaurant_name") || "Spice Garden Bistro");
-    setRestaurantSlug(localStorage.getItem("eatscan_restaurant_slug") || "spice-garden");
-    setTableUid(localStorage.getItem("eatscan_table_uid") || "");
-    setTableTitle(localStorage.getItem("eatscan_table_title") || "Table 01");
+    const rId = localStorage.getItem("eatscan_restaurant_id") || "";
+    const rName = localStorage.getItem("eatscan_restaurant_name") || "Spice Garden Bistro";
+    const rSlug = localStorage.getItem("eatscan_restaurant_slug") || "spice-garden";
+    const tUid = localStorage.getItem("eatscan_table_uid") || "";
+    const tTitle = localStorage.getItem("eatscan_table_title") || "Table 01";
 
-    // Read payment config
+    setRestaurantId(rId);
+    setRestaurantName(rName);
+    setRestaurantSlug(rSlug);
+    setTableUid(tUid);
+    setTableTitle(tTitle);
+
+    // Read 1-time login customer info from localStorage
+    const savedMobile = localStorage.getItem("eatscan_customer_mobile");
+    const savedName = localStorage.getItem("eatscan_customer_name");
+    if (savedMobile) {
+      setMobileNo(savedMobile);
+      setIsLoggedIn(true);
+    }
+    if (savedName) {
+      setCustomerName(savedName);
+    }
+
+    // Read payment config from localStorage first for instant initial render
     const savedPaymentConfig = localStorage.getItem("eatscan_payment_config");
     let activeConfig = { isCashEnabled: true, isOnlineUpiEnabled: true, isCreditCardEnabled: true };
     if (savedPaymentConfig) {
@@ -90,7 +110,7 @@ export default function CheckoutPage() {
       } catch (e) {}
     }
 
-    // Set default payment method: default is CASH if enabled, else first enabled option
+    // Set initial payment method according to active config
     if (activeConfig.isCashEnabled) {
       setPaymentMethod("CASH");
     } else if (activeConfig.isOnlineUpiEnabled) {
@@ -107,6 +127,42 @@ export default function CheckoutPage() {
     } else if (savedRestTheme) {
       setThemePreference(savedRestTheme);
     }
+
+    // Fetch LIVE real-time payment settings directly from database
+    async function fetchLivePaymentConfig() {
+      try {
+        const res = await fetch(`/api/restaurant/menu?slug=${rSlug}`);
+        const data = await res.json();
+        if (data.success && data.restaurant) {
+          const liveConfig = {
+            isCashEnabled: data.restaurant.isCashEnabled ?? true,
+            isOnlineUpiEnabled: data.restaurant.isOnlineUpiEnabled ?? true,
+            isCreditCardEnabled: data.restaurant.isCreditCardEnabled ?? true,
+          };
+
+          setPaymentConfig(liveConfig);
+          localStorage.setItem("eatscan_payment_config", JSON.stringify(liveConfig));
+
+          // Auto-switch payment method to first enabled option if current selection is disabled
+          setPaymentMethod((currentMethod) => {
+            if (currentMethod === "CASH" && !liveConfig.isCashEnabled) {
+              return liveConfig.isOnlineUpiEnabled ? "UPI" : liveConfig.isCreditCardEnabled ? "CARD" : "CASH";
+            }
+            if (currentMethod === "UPI" && !liveConfig.isOnlineUpiEnabled) {
+              return liveConfig.isCashEnabled ? "CASH" : liveConfig.isCreditCardEnabled ? "CARD" : "UPI";
+            }
+            if (currentMethod === "CARD" && !liveConfig.isCreditCardEnabled) {
+              return liveConfig.isCashEnabled ? "CASH" : liveConfig.isOnlineUpiEnabled ? "UPI" : "CARD";
+            }
+            return currentMethod;
+          });
+        }
+      } catch (err) {
+        console.error("Fetch live payment config error:", err);
+      }
+    }
+
+    fetchLivePaymentConfig();
   }, []);
 
   const isDark =
@@ -184,15 +240,14 @@ export default function CheckoutPage() {
   const taxAmount = totalAmount * 0.05;
   const grandTotal = totalAmount + taxAmount;
 
-  const handleOpenDrawer = () => {
-    if (cart.length === 0) return;
-    setIsDrawerOpen(true);
-  };
+  // Direct Order Submission Handler
+  const submitOrder = async (phoneToUse, nameToUse) => {
+    const activeMobile = phoneToUse || mobileNo;
+    const activeName = nameToUse || customerName;
 
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-    if (!mobileNo) {
+    if (!activeMobile) {
       setError("Mobile number is required to place order.");
+      setIsDrawerOpen(true);
       return;
     }
 
@@ -201,8 +256,8 @@ export default function CheckoutPage() {
 
     try {
       const payload = {
-        mobileNo: mobileNo.trim(),
-        name: customerName ? customerName.trim() : "Guest Diner",
+        mobileNo: activeMobile.trim(),
+        name: activeName ? activeName.trim() : "Guest Diner",
         restaurantId: restaurantId || null,
         restaurantSlug: restaurantSlug || "spice-garden",
         tableUid: tableUid || null,
@@ -229,6 +284,12 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Failed to place order");
       }
 
+      // Save 1-time login credentials in localStorage for instant 1-click future orders
+      localStorage.setItem("eatscan_customer_mobile", activeMobile.trim());
+      if (activeName) {
+        localStorage.setItem("eatscan_customer_name", activeName.trim());
+      }
+
       // Clear cart & store latest order UID
       localStorage.removeItem("eatscan_cart");
       localStorage.setItem("eatscan_latest_order_uid", data.orderUid);
@@ -239,6 +300,24 @@ export default function CheckoutPage() {
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  const handleProceedClick = () => {
+    if (cart.length === 0) return;
+    const savedMobile = localStorage.getItem("eatscan_customer_mobile") || mobileNo;
+
+    if (savedMobile) {
+      // User is already logged in / verified! Directly submit order without drawer popup!
+      submitOrder(savedMobile, customerName);
+    } else {
+      // First-time order: prompt mobile verification drawer
+      setIsDrawerOpen(true);
+    }
+  };
+
+  const handleDrawerSubmit = (e) => {
+    e.preventDefault();
+    submitOrder(mobileNo, customerName);
   };
 
   if (cart.length === 0) {
@@ -335,7 +414,7 @@ export default function CheckoutPage() {
       </header>
 
       <main className="pt-20 px-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: Table Details, Payment Options, Notes */}
+        {/* LEFT COLUMN: Table Details, Customer Badge, Payment Options, Notes */}
         <div className="md:col-span-7 flex flex-col gap-6">
           {/* Table / Location Section */}
           <section className="flex flex-col gap-3">
@@ -359,6 +438,34 @@ export default function CheckoutPage() {
                 </p>
               </div>
             </div>
+
+            {/* Saved Customer 1-Click Login Badge */}
+            {isLoggedIn && mobileNo && (
+              <div
+                className={`p-3.5 rounded-xl flex items-center justify-between border ${
+                  isDark
+                    ? "bg-[#9d34ff]/10 border-[#9d34ff]/30 text-[#dcb8ff]"
+                    : "bg-purple-50 border-purple-200 text-purple-900"
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <UserCheck className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`} />
+                  <span className="text-xs font-bold">
+                    Ordering as <strong className="font-extrabold">{customerName || "Diner"}</strong> ({mobileNo})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className={`text-[10px] font-black uppercase tracking-wider underline flex items-center space-x-1 ${
+                    isDark ? "text-[#dcb8ff]" : "text-purple-700"
+                  }`}
+                >
+                  <Edit2 className="w-3 h-3" />
+                  <span>Change</span>
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Payment Method Selection (Shows ONLY enabled options, CASH default if enabled) */}
@@ -616,13 +723,18 @@ export default function CheckoutPage() {
       {/* FLOATING ACTION BUTTON */}
       <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto">
         <button
-          onClick={handleOpenDrawer}
-          className={`w-full py-4 rounded-2xl font-black text-base shadow-xl flex items-center justify-center space-x-2 transition-all active:scale-98 text-white ${
+          onClick={handleProceedClick}
+          disabled={loading}
+          className={`w-full py-4 rounded-2xl font-black text-base shadow-xl flex items-center justify-center space-x-2 transition-all active:scale-98 text-white disabled:opacity-50 ${
             isDark ? "bg-[#9d34ff] hover:bg-[#8806ea]" : "bg-purple-600 hover:bg-purple-700"
           }`}
         >
           <Sparkles className="w-5 h-5 text-purple-200" />
-          <span>Proceed to Place Order (₹{grandTotal.toFixed(2)})</span>
+          <span>
+            {loading
+              ? "Sending Order to Kitchen..."
+              : `Proceed to Place Order (₹${grandTotal.toFixed(2)})`}
+          </span>
         </button>
       </div>
 
@@ -660,7 +772,7 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              <form onSubmit={handlePlaceOrder} className="space-y-4">
+              <form onSubmit={handleDrawerSubmit} className="space-y-4">
                 <div>
                   <label className={`block text-xs font-bold uppercase mb-1 ${isDark ? "text-[#cfc2d8]" : "text-slate-700"}`}>
                     Your Name
