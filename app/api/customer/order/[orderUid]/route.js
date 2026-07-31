@@ -1,17 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   try {
-    const { orderUid } = params;
+    const params = await context?.params;
+    const orderUid = params?.orderUid;
+
+    if (!orderUid) {
+      return NextResponse.json({ error: "Order UID is required" }, { status: 400 });
+    }
 
     const order = await prisma.customerOrder.findFirst({
-      where: { uid: orderUid, isDeleted: false },
+      where: {
+        OR: [
+          { uid: orderUid },
+          { id: orderUid },
+        ],
+        isDeleted: false,
+      },
       include: {
-        items: true,
+        items: {
+          orderBy: { createdAt: "asc" },
+        },
         restaurant: {
           select: {
+            id: true,
             restaurantName: true,
+            slug: true,
             restaurantMobileNo: true,
             address: true,
           },

@@ -19,7 +19,13 @@ import {
   Sun,
   Moon,
   Laptop,
+  XCircle,
+  History,
+  Receipt,
+  X,
+  UserCheck,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function OrderStatusPage() {
   const params = useParams();
@@ -30,6 +36,12 @@ export default function OrderStatusPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [serviceRequested, setServiceRequested] = useState(false);
+
+  // Multi-order history state
+  const [activeOrders, setActiveOrders] = useState([]);
+  const [pastOrders, setPastOrders] = useState([]);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [historyTab, setHistoryTab] = useState("ACTIVE");
 
   // Theme preference state
   const [themePreference, setThemePreference] = useState("DARK");
@@ -73,12 +85,32 @@ export default function OrderStatusPage() {
     localStorage.setItem("eatscan_user_theme_override", nextTheme);
   };
 
+  const fetchCustomerOrdersHistory = async (mobileNo) => {
+    if (!mobileNo) return;
+    try {
+      const res = await fetch(`/api/customer/orders?mobileNo=${mobileNo}`);
+      const data = await res.json();
+      if (data.success) {
+        setActiveOrders(data.activeOrders || []);
+        setPastOrders(data.pastOrders || []);
+      }
+    } catch (e) {
+      console.error("Fetch orders history error:", e);
+    }
+  };
+
   const fetchOrder = async () => {
     try {
       const res = await fetch(`/api/customer/order/${orderUid}`);
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.order) {
         setOrder(data.order);
+
+        // Fetch customer history ONLY for the logged-in user of this browser session
+        const loggedInMobile = localStorage.getItem("eatscan_customer_mobile");
+        if (loggedInMobile) {
+          fetchCustomerOrdersHistory(loggedInMobile);
+        }
       } else {
         setError(data.error || "Order not found");
       }
@@ -115,7 +147,7 @@ export default function OrderStatusPage() {
             }`}
           />
           <p className={`font-extrabold text-sm ${isDark ? "text-[#dcb8ff]" : "text-purple-900"}`}>
-            Fetching Live Order Tracker...
+            Fetching Live Kitchen Status...
           </p>
         </div>
       </div>
@@ -150,23 +182,69 @@ export default function OrderStatusPage() {
     );
   }
 
-  const getStatusStep = (status) => {
+  const getStatusStepInfo = (status) => {
     switch (status) {
       case "PENDING":
-        return 1;
+        return {
+          step: 1,
+          badge: "Order Sent to Kitchen",
+          headline: "Order Placed!",
+          description: "Your order has been sent to the kitchen. Waiting for staff confirmation.",
+          color: isDark ? "text-amber-300" : "text-amber-700",
+        };
       case "ACCEPTED":
-        return 2;
+        return {
+          step: 2,
+          badge: "Accepted by Kitchen",
+          headline: "Order Confirmed!",
+          description: "The kitchen team has accepted your order and assigned a preparation station.",
+          color: isDark ? "text-[#dcb8ff]" : "text-purple-700",
+        };
       case "PREPARING":
-        return 3;
+        return {
+          step: 3,
+          badge: "Cooking in Progress",
+          headline: "Chefs are Cooking!",
+          description: "Your dishes are currently being prepared fresh by our culinary team.",
+          color: isDark ? "text-blue-300" : "text-blue-700",
+        };
       case "SERVED":
+        return {
+          step: 4,
+          badge: "Served to Table",
+          headline: "Food Served!",
+          description: "Your dishes have been served to your table. Enjoy your meal!",
+          color: isDark ? "text-emerald-300" : "text-emerald-700",
+        };
       case "COMPLETED":
-        return 4;
+        return {
+          step: 4,
+          badge: "Order Completed",
+          headline: "Order Completed!",
+          description: "Thank you for dining with us! Hope to see you again soon.",
+          color: isDark ? "text-emerald-300" : "text-emerald-700",
+        };
+      case "CANCELLED":
+        return {
+          step: 0,
+          badge: "Order Cancelled",
+          headline: "Order Cancelled",
+          description: "This order was cancelled.",
+          color: "text-rose-500",
+        };
       default:
-        return 1;
+        return {
+          step: 1,
+          badge: "Order Sent",
+          headline: "Order Placed!",
+          description: "Your order has been received.",
+          color: isDark ? "text-[#dcb8ff]" : "text-purple-700",
+        };
     }
   };
 
-  const currentStep = getStatusStep(order.orderStatus);
+  const statusInfo = getStatusStepInfo(order.orderStatus);
+  const currentStep = statusInfo.step;
 
   return (
     <div
@@ -202,46 +280,73 @@ export default function OrderStatusPage() {
             </span>
           </div>
 
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={cycleThemePreference}
-            title={`Current Theme: ${themePreference}. Click to switch mode.`}
-            className={`p-2 rounded-xl flex items-center space-x-1 border transition-all ${
-              isDark
-                ? "bg-[#1e2021] border-[#333536] text-[#dcb8ff] hover:bg-[#282a2b]"
-                : "bg-slate-100 border-slate-200 text-purple-700 hover:bg-slate-200"
-            }`}
-          >
-            {themePreference === "DARK" && <Moon className="w-4 h-4 text-[#dcb8ff]" />}
-            {themePreference === "LIGHT" && <Sun className="w-4 h-4 text-amber-500" />}
-            {themePreference === "SYSTEM" && <Laptop className="w-4 h-4 text-indigo-400" />}
-          </button>
+          <div className="flex items-center space-x-2">
+            {/* Multi-Order & History Drawer Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsHistoryDrawerOpen(true)}
+              className={`p-2 rounded-xl border flex items-center space-x-1 transition-all ${
+                isDark
+                  ? "bg-[#1e2021] border-[#333536] text-[#dcb8ff] hover:bg-[#282a2b]"
+                  : "bg-slate-100 border-slate-200 text-purple-700 hover:bg-slate-200"
+              }`}
+              title="My Orders & History"
+            >
+              <History className="w-4 h-4 text-[#dcb8ff]" />
+              {(activeOrders.length > 1 || pastOrders.length > 0) && (
+                <span className="w-2 h-2 rounded-full bg-[#9d34ff] animate-ping" />
+              )}
+            </button>
+
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={cycleThemePreference}
+              title={`Current Theme: ${themePreference}. Click to switch mode.`}
+              className={`p-2 rounded-xl flex items-center space-x-1 border transition-all ${
+                isDark
+                  ? "bg-[#1e2021] border-[#333536] text-[#dcb8ff] hover:bg-[#282a2b]"
+                  : "bg-slate-100 border-slate-200 text-purple-700 hover:bg-slate-200"
+              }`}
+            >
+              {themePreference === "DARK" && <Moon className="w-4 h-4 text-[#dcb8ff]" />}
+              {themePreference === "LIGHT" && <Sun className="w-4 h-4 text-amber-500" />}
+              {themePreference === "SYSTEM" && <Laptop className="w-4 h-4 text-indigo-400" />}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* SUCCESS HERO CONTENT */}
+      {/* DYNAMIC LIVE ORDER STATUS HERO CONTENT */}
       <main className="flex-grow max-w-md w-full px-4 pt-6 pb-8 space-y-6 text-center relative z-10 flex flex-col items-center justify-center">
-        {/* Animated Floating Success Checkmark Hero */}
+        {/* Animated Icon Hero */}
         <div className="mb-2 animate-bounce duration-1000">
           <div
             className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-2xl ${
-              isDark
+              order.orderStatus === "CANCELLED"
+                ? "bg-rose-600 shadow-rose-600/40"
+                : isDark
                 ? "bg-[#9d34ff] checkmark-glow shadow-[#9d34ff]/40"
                 : "bg-purple-600 shadow-purple-600/30"
             }`}
           >
-            <CheckCircle2 className="w-16 h-16 text-white" />
+            {order.orderStatus === "CANCELLED" ? (
+              <XCircle className="w-16 h-16 text-white" />
+            ) : order.orderStatus === "PREPARING" ? (
+              <ChefHat className="w-16 h-16 text-white animate-pulse" />
+            ) : (
+              <CheckCircle2 className="w-16 h-16 text-white" />
+            )}
           </div>
         </div>
 
-        {/* Headlines */}
+        {/* Dynamic Headlines & Descriptions based on DB orderStatus */}
         <div>
           <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-            Thank You!
+            {statusInfo.headline}
           </h1>
           <p className={`text-xs sm:text-sm font-medium mt-1.5 leading-relaxed max-w-sm mx-auto ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
-            Your order has been received and is being prepared with care by our chefs.
+            {statusInfo.description}
           </p>
         </div>
 
@@ -254,7 +359,7 @@ export default function OrderStatusPage() {
           <div className="flex justify-between items-start">
             <div>
               <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                Order ID
+                Order Number
               </p>
               <p className={`text-xl font-black ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
                 #{order.orderNumber}
@@ -262,43 +367,70 @@ export default function OrderStatusPage() {
             </div>
             <div className="text-right">
               <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                Estimated Time
+                Live Status
               </p>
-              <p className={`text-lg font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>20-25 min</p>
+              <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-full border ${
+                order.orderStatus === "PENDING"
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : order.orderStatus === "ACCEPTED"
+                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                  : order.orderStatus === "PREPARING"
+                  ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                  : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+              }`}>
+                {order.orderStatus}
+              </span>
             </div>
           </div>
 
           {/* Stepper Progress Visual */}
-          <div className="space-y-2 pt-1">
-            <div className={`flex items-center justify-between text-[10px] font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
-              <span>Order Progress</span>
-              <span className={isDark ? "text-[#dcb8ff]" : "text-purple-700"}>Step {currentStep} of 4</span>
+          {order.orderStatus !== "CANCELLED" && (
+            <div className="space-y-2 pt-1">
+              <div className={`flex items-center justify-between text-[10px] font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
+                <span>{statusInfo.badge}</span>
+                <span className={statusInfo.color}>Step {currentStep} of 4</span>
+              </div>
+
+              <div className="flex gap-1.5 h-1.5">
+                {[1, 2, 3, 4].map((step) => (
+                  <div
+                    key={step}
+                    className={`h-full flex-grow rounded-full transition-all duration-500 ${
+                      currentStep >= step
+                        ? isDark
+                          ? "bg-[#9d34ff] active-glow"
+                          : "bg-purple-600 shadow-xs"
+                        : isDark
+                        ? "bg-[#333536]"
+                        : "bg-slate-200"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={`flex items-center justify-between pt-1 text-xs font-medium border-t ${isDark ? "text-[#e2e2e3] border-[#333536]/60" : "text-slate-700 border-slate-100"}`}>
+            <div className="flex items-center gap-2">
+              <Utensils className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+              <span>
+                {order.restaurant?.restaurantName || "Spice Garden Bistro"} • Table:{" "}
+                <strong className={isDark ? "text-[#dcb8ff]" : "text-purple-700"}>
+                  {order.qrTable?.tableTitle || "Direct Table"}
+                </strong>
+              </span>
             </div>
 
-            <div className="flex gap-1.5 h-1.5">
-              {[1, 2, 3, 4].map((step) => (
-                <div
-                  key={step}
-                  className={`h-full flex-grow rounded-full transition-all duration-500 ${
-                    currentStep >= step
-                      ? isDark
-                        ? "bg-[#9d34ff] active-glow"
-                        : "bg-purple-600 shadow-xs"
-                      : isDark
-                      ? "bg-[#333536]"
-                      : "bg-slate-200"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className={`flex items-center gap-2 pt-1 text-xs font-medium border-t ${isDark ? "text-[#e2e2e3] border-[#333536]/60" : "text-slate-700 border-slate-100"}`}>
-            <Utensils className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
-            <span>
-              {order.restaurant?.restaurantName || "Spice Garden Bistro"} • Kitchen Status:{" "}
-              <strong className={isDark ? "text-[#dcb8ff]" : "text-purple-700"}>{order.orderStatus}</strong>
-            </span>
+            {/* Quick Switch Button if multiple active orders exist */}
+            {activeOrders.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setIsHistoryDrawerOpen(true)}
+                className={`text-[10px] font-black underline uppercase ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}
+              >
+                {activeOrders.length} Active Orders
+              </button>
+            )}
           </div>
         </div>
 
@@ -324,7 +456,7 @@ export default function OrderStatusPage() {
           }`}
         >
           <h3 className={`text-xs font-extrabold uppercase tracking-wider border-b pb-2 ${isDark ? "text-[#cfc2d8] border-[#333536]" : "text-slate-600 border-slate-100"}`}>
-            Quick Receipt Summary
+            Order Receipt ({order.items?.length || 0} items)
           </h3>
           <div className="space-y-2 text-xs">
             {order.items?.map((item) => (
@@ -339,7 +471,7 @@ export default function OrderStatusPage() {
               </div>
             ))}
             <div className={`flex justify-between items-center font-extrabold pt-2 border-t text-sm ${isDark ? "border-[#333536] text-white" : "border-slate-100 text-slate-900"}`}>
-              <span>Total Paid ({order.paymentMethod || "CASH"})</span>
+              <span>Total ({order.paymentMethod || "CASH"})</span>
               <span className={`text-base font-black font-mono ${isDark ? "text-[#dcb8ff]" : "text-purple-900"}`}>
                 ₹{parseFloat(order.grandTotal).toFixed(2)}
               </span>
@@ -357,10 +489,187 @@ export default function OrderStatusPage() {
                 : "bg-white border-slate-200 text-purple-700 hover:border-purple-300 shadow-xs"
             }`}
           >
-            Back to Restaurant Menu
+            Add More Items / Browse Menu
           </Link>
         </div>
       </main>
+
+      {/* MULTI-ORDER SWITCHER & ORDER HISTORY DRAWER */}
+      <AnimatePresence>
+        {isHistoryDrawerOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsHistoryDrawerOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className={`relative w-full max-w-lg rounded-t-[32px] p-6 shadow-2xl border-t space-y-4 z-10 max-h-[85vh] flex flex-col ${
+                isDark ? "bg-[#121415] border-[#1c1c1e] text-[#e2e2e3]" : "bg-white border-slate-200 text-slate-900"
+              }`}
+            >
+              <div className={`w-12 h-1.5 rounded-full mx-auto -mt-2 cursor-grab ${isDark ? "bg-[#333536]" : "bg-slate-300"}`} />
+
+              <div className={`flex items-center justify-between border-b pb-3 ${isDark ? "border-[#1c1c1e]" : "border-slate-200"}`}>
+                <div className="flex items-center space-x-2">
+                  <History className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`} />
+                  <h3 className={`font-extrabold text-lg ${isDark ? "text-white" : "text-slate-900"}`}>
+                    My Orders & History
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryDrawerOpen(false)}
+                  className={`p-1.5 rounded-xl ${isDark ? "bg-[#1e2021] text-[#cfc2d8]" : "bg-slate-100 text-slate-600"}`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setHistoryTab("ACTIVE")}
+                  className={`py-2.5 rounded-xl border transition-all ${
+                    historyTab === "ACTIVE"
+                      ? isDark
+                        ? "bg-[#9d34ff] text-white border-[#9d34ff]"
+                        : "bg-purple-600 text-white border-purple-600"
+                      : isDark
+                      ? "bg-[#1e2021] border-[#333536] text-[#cfc2d8]"
+                      : "bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+                >
+                  Running Active ({activeOrders.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHistoryTab("PAST")}
+                  className={`py-2.5 rounded-xl border transition-all ${
+                    historyTab === "PAST"
+                      ? isDark
+                        ? "bg-[#9d34ff] text-white border-[#9d34ff]"
+                        : "bg-purple-600 text-white border-purple-600"
+                      : isDark
+                      ? "bg-[#1e2021] border-[#333536] text-[#cfc2d8]"
+                      : "bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+                >
+                  Past Receipts ({pastOrders.length})
+                </button>
+              </div>
+
+              {/* List Content */}
+              <div className="flex-1 overflow-y-auto space-y-3 max-h-[55vh] pr-1">
+                {historyTab === "ACTIVE" ? (
+                  activeOrders.length === 0 ? (
+                    <div className="py-8 text-center text-xs font-medium text-slate-500">
+                      No running active orders right now.
+                    </div>
+                  ) : (
+                    activeOrders.map((ord) => (
+                      <div
+                        key={ord.id}
+                        onClick={() => {
+                          setIsHistoryDrawerOpen(false);
+                          router.push(`/restaurant/order/${ord.uid}`);
+                        }}
+                        className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                          ord.uid === order.uid
+                            ? isDark
+                              ? "bg-[#1e2021] border-[#9d34ff] active-glow"
+                              : "bg-purple-50 border-purple-600 shadow-sm"
+                            : isDark
+                            ? "bg-[#1e2021] border-[#333536] hover:border-[#4d4355]"
+                            : "bg-slate-50 border-slate-200 hover:border-purple-300"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className={`text-[10px] font-black uppercase ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                              #{ord.orderNumber} • {ord.qrTable?.tableTitle || "Direct Table"}
+                            </span>
+                            <h4 className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                              {ord.restaurant?.restaurantName}
+                            </h4>
+                          </div>
+                          <span
+                            className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                              ord.orderStatus === "PENDING"
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                                : ord.orderStatus === "ACCEPTED"
+                                ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                                : ord.orderStatus === "PREPARING"
+                                ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                                : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                            }`}
+                          >
+                            {ord.orderStatus}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-xs font-bold pt-2 border-t border-slate-300/20">
+                          <span>{ord.items?.length || 0} items</span>
+                          <span className={isDark ? "text-[#dcb8ff]" : "text-purple-900"}>
+                            ₹{parseFloat(ord.grandTotal).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )
+                ) : pastOrders.length === 0 ? (
+                  <div className="py-8 text-center text-xs font-medium text-slate-500">
+                    No past order receipts found.
+                  </div>
+                ) : (
+                  pastOrders.map((ord) => (
+                    <div
+                      key={ord.id}
+                      onClick={() => {
+                        setIsHistoryDrawerOpen(false);
+                        router.push(`/restaurant/order/${ord.uid}`);
+                      }}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                        isDark ? "bg-[#1e2021] border-[#333536]" : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className={`text-[10px] font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                            #{ord.orderNumber} • {new Date(ord.createdAt).toLocaleDateString()}
+                          </span>
+                          <h4 className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                            {ord.restaurant?.restaurantName}
+                          </h4>
+                        </div>
+                        <span className={`text-[10px] font-black uppercase ${ord.orderStatus === "COMPLETED" ? "text-emerald-500" : "text-rose-500"}`}>
+                          {ord.orderStatus}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs font-bold pt-2 border-t border-slate-300/20">
+                        <span>{ord.items?.length || 0} items</span>
+                        <span className={isDark ? "text-[#dcb8ff]" : "text-purple-900"}>
+                          ₹{parseFloat(ord.grandTotal).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

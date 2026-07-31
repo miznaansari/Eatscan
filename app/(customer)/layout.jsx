@@ -38,6 +38,7 @@ export default function CustomerLayout({ children }) {
 
     updateCartState();
     window.addEventListener("storage", updateCartState);
+    window.addEventListener("eatscan_cart_updated", updateCartState);
 
     // Read restaurant & table details
     const savedName = localStorage.getItem("eatscan_restaurant_name");
@@ -49,30 +50,72 @@ export default function CustomerLayout({ children }) {
     if (savedSlug) setRestaurantSlug(savedSlug);
     if (savedTable) setTableTitle(savedTable);
 
-    if (savedOrder) {
-      setLatestOrderUid(savedOrder);
-      // Fetch order status to check if it's currently pending/active
-      fetch(`/api/customer/order/${savedOrder}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.order) {
-            const status = data.order.orderStatus;
-            const activeStatuses = ["PENDING", "ACCEPTED", "PREPARING", "SERVED"];
-            if (activeStatuses.includes(status)) {
-              setHasPendingOrder(true);
+    const checkActiveOrders = async () => {
+      const currentMobile = localStorage.getItem("eatscan_customer_mobile");
+
+      if (currentMobile) {
+        try {
+          const res = await fetch(`/api/customer/orders?mobileNo=${currentMobile.trim()}`);
+          const data = await res.json();
+          if (data.success && data.activeOrders && data.activeOrders.length > 0) {
+            setHasPendingOrder(true);
+            setLatestOrderUid(data.activeOrders[0].uid);
+            localStorage.setItem("eatscan_latest_order_uid", data.activeOrders[0].uid);
+            return;
+          } else {
+            // Mobile user has NO active running order currently
+            setHasPendingOrder(false);
+            setLatestOrderUid("");
+            // Remove any stale order UID belonging to a different mobile number
+            const cachedOrder = localStorage.getItem("eatscan_latest_order_uid");
+            if (cachedOrder) {
+              fetch(`/api/customer/order/${cachedOrder}`)
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success && data.order && data.order.customer?.mobileNo !== currentMobile.trim()) {
+                    localStorage.removeItem("eatscan_latest_order_uid");
+                  }
+                })
+                .catch(() => {});
+            }
+            return;
+          }
+        } catch (e) {}
+      }
+
+      if (savedOrder) {
+        fetch(`/api/customer/order/${savedOrder}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.order) {
+              const status = data.order.orderStatus;
+              const activeStatuses = ["PENDING", "ACCEPTED", "PREPARING", "SERVED"];
+              const isMatch = !currentMobile || data.order.customer?.mobileNo === currentMobile.trim();
+              if (isMatch && activeStatuses.includes(status)) {
+                setHasPendingOrder(true);
+                setLatestOrderUid(savedOrder);
+              } else {
+                setHasPendingOrder(false);
+                if (!isMatch) {
+                  localStorage.removeItem("eatscan_latest_order_uid");
+                }
+              }
             } else {
               setHasPendingOrder(false);
             }
-          } else {
-            setHasPendingOrder(false);
-          }
-        })
-        .catch(() => setHasPendingOrder(false));
-    } else {
-      setHasPendingOrder(false);
-    }
+          })
+          .catch(() => setHasPendingOrder(false));
+      } else {
+        setHasPendingOrder(false);
+      }
+    };
 
-    return () => window.removeEventListener("storage", updateCartState);
+    checkActiveOrders();
+
+    return () => {
+      window.removeEventListener("storage", updateCartState);
+      window.removeEventListener("eatscan_cart_updated", updateCartState);
+    };
   }, [pathname]);
 
   const [themePreference, setThemePreference] = useState("DARK");
@@ -130,8 +173,8 @@ export default function CustomerLayout({ children }) {
     >
       <main className="flex-1">{children}</main>
 
-      {/* Floating Mobile Bottom Navigation Bar (Hidden on Checkout Page) */}
-      {!isCheckoutPage && (
+      {/* Floating Mobile Bottom Navigation Bar (Hidden on Checkout Page & When Cart Has Items) */}
+      {!isCheckoutPage && cartCount === 0 && (
         <div className="fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto">
           <nav
             className={`px-3 py-2 rounded-3xl backdrop-blur-2xl shadow-2xl flex items-center justify-around transition-colors border ${

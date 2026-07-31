@@ -25,6 +25,7 @@ import {
   Minus,
   UserCheck,
   Edit2,
+  UtensilsCrossed,
 } from "lucide-react";
 
 export default function CheckoutPage() {
@@ -285,6 +286,11 @@ export default function CheckoutPage() {
       }
 
       // Save 1-time login credentials in localStorage for instant 1-click future orders
+      const previousMobile = localStorage.getItem("eatscan_customer_mobile");
+      if (previousMobile && previousMobile.trim() !== activeMobile.trim()) {
+        localStorage.removeItem("eatscan_latest_order_uid");
+      }
+
       localStorage.setItem("eatscan_customer_mobile", activeMobile.trim());
       if (activeName) {
         localStorage.setItem("eatscan_customer_name", activeName.trim());
@@ -293,6 +299,11 @@ export default function CheckoutPage() {
       // Clear cart & store latest order UID
       localStorage.removeItem("eatscan_cart");
       localStorage.setItem("eatscan_latest_order_uid", data.orderUid);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eatscan_cart_updated"));
+        window.dispatchEvent(new Event("storage"));
+      }
 
       // Redirect to Order Success & Live Tracker
       router.push(`/restaurant/order/${data.orderUid}`);
@@ -304,11 +315,11 @@ export default function CheckoutPage() {
 
   const handleProceedClick = () => {
     if (cart.length === 0) return;
-    const savedMobile = localStorage.getItem("eatscan_customer_mobile") || mobileNo;
+    const activeMobile = mobileNo || localStorage.getItem("eatscan_customer_mobile");
 
-    if (savedMobile) {
-      // User is already logged in / verified! Directly submit order without drawer popup!
-      submitOrder(savedMobile, customerName);
+    if (activeMobile) {
+      // Direct submit with activeMobile!
+      submitOrder(activeMobile, customerName);
     } else {
       // First-time order: prompt mobile verification drawer
       setIsDrawerOpen(true);
@@ -317,6 +328,7 @@ export default function CheckoutPage() {
 
   const handleDrawerSubmit = (e) => {
     e.preventDefault();
+    if (!mobileNo) return;
     submitOrder(mobileNo, customerName);
   };
 
@@ -413,311 +425,311 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <main className="pt-20 px-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: Table Details, Customer Badge, Payment Options, Notes */}
-        <div className="md:col-span-7 flex flex-col gap-6">
-          {/* Table / Location Section */}
-          <section className="flex flex-col gap-3">
-            <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-              Dining Table & Location
-            </h2>
+      {/* SINGLE REARRANGED STACKED LAYOUT */}
+      <main className="pt-20 px-4 max-w-2xl mx-auto flex flex-col gap-6">
+        {/* 1. DINING TABLE AND LOCATION */}
+        <section className="flex flex-col gap-3">
+          <h2 className={`text-base font-extrabold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+            <MapPin className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+            <span>Dining Table & Location</span>
+          </h2>
+          <div
+            className={`p-4 rounded-xl flex gap-4 items-start border ${
+              isDark ? "glass-card-dark border-[#1c1c1e]" : "bg-white border-slate-200 shadow-xs"
+            }`}
+          >
+            <div className={`p-2.5 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
+              <MapPin className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                {tableTitle || "Table 01"}
+              </p>
+              <p className={`text-xs mt-0.5 leading-relaxed ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                {restaurantName} • Instant In-Dining Table Ordering
+              </p>
+            </div>
+          </div>
+
+          {/* Saved Customer 1-Click Login Badge */}
+          {isLoggedIn && mobileNo && (
             <div
-              className={`p-4 rounded-xl flex gap-4 items-start border ${
-                isDark ? "glass-card-dark border-[#1c1c1e]" : "bg-white border-slate-200 shadow-xs"
+              className={`p-3.5 rounded-xl flex items-center justify-between border ${
+                isDark
+                  ? "bg-[#9d34ff]/10 border-[#9d34ff]/30 text-[#dcb8ff]"
+                  : "bg-purple-50 border-purple-200 text-purple-900"
               }`}
             >
-              <div className={`p-2.5 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
-                <MapPin className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+              <div className="flex items-center space-x-2.5">
+                <UserCheck className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`} />
+                <span className="text-xs font-bold">
+                  Ordering as <strong className="font-extrabold">{customerName || "Diner"}</strong> ({mobileNo})
+                </span>
               </div>
-              <div className="flex-1">
-                <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-                  {tableTitle || "Table 01"}
-                </p>
-                <p className={`text-xs mt-0.5 leading-relaxed ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                  {restaurantName} • Instant In-Dining Table Ordering
-                </p>
-              </div>
-            </div>
-
-            {/* Saved Customer 1-Click Login Badge */}
-            {isLoggedIn && mobileNo && (
-              <div
-                className={`p-3.5 rounded-xl flex items-center justify-between border ${
-                  isDark
-                    ? "bg-[#9d34ff]/10 border-[#9d34ff]/30 text-[#dcb8ff]"
-                    : "bg-purple-50 border-purple-200 text-purple-900"
+              <button
+                type="button"
+                onClick={() => setIsDrawerOpen(true)}
+                className={`text-[10px] font-black uppercase tracking-wider underline flex items-center space-x-1 ${
+                  isDark ? "text-[#dcb8ff]" : "text-purple-700"
                 }`}
               >
-                <div className="flex items-center space-x-2.5">
-                  <UserCheck className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`} />
-                  <span className="text-xs font-bold">
-                    Ordering as <strong className="font-extrabold">{customerName || "Diner"}</strong> ({mobileNo})
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsDrawerOpen(true)}
-                  className={`text-[10px] font-black uppercase tracking-wider underline flex items-center space-x-1 ${
-                    isDark ? "text-[#dcb8ff]" : "text-purple-700"
-                  }`}
-                >
-                  <Edit2 className="w-3 h-3" />
-                  <span>Change</span>
-                </button>
-              </div>
-            )}
-          </section>
+                <Edit2 className="w-3 h-3" />
+                <span>Change</span>
+              </button>
+            </div>
+          )}
+        </section>
 
-          {/* Payment Method Selection (Shows ONLY enabled options, CASH default if enabled) */}
-          <section className="flex flex-col gap-3">
-            <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-              Payment Method
+        {/* 2. ORDER SUMMARY */}
+        <section className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h2 className={`text-base font-extrabold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+              <ShoppingBag className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+              <span>Order Summary ({cart.reduce((sum, i) => sum + i.quantity, 0)} items)</span>
             </h2>
-            <div className="flex flex-col gap-2.5">
-              {/* Cash Option (Default Selected if enabled) */}
-              {paymentConfig.isCashEnabled && (
-                <label
-                  onClick={() => setPaymentMethod("CASH")}
-                  className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
-                    isDark
-                      ? paymentMethod === "CASH"
-                        ? "glass-card-dark border-[#9d34ff] active-glow"
-                        : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
-                      : paymentMethod === "CASH"
-                      ? "bg-white border-2 border-purple-600 shadow-md"
-                      : "bg-white border border-slate-200 hover:border-purple-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="CASH"
-                    checked={paymentMethod === "CASH"}
-                    onChange={() => setPaymentMethod("CASH")}
-                    className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
-                  />
-                  <div className="flex-1 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
-                        <Coins className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
-                      </div>
-                      <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
-                        Pay Cash at Table
-                      </span>
+          </div>
+
+          <div
+            className={`rounded-xl overflow-hidden flex flex-col divide-y border ${
+              isDark
+                ? "glass-card-dark border-[#1c1c1e] divide-[#333536]/40"
+                : "bg-white border-slate-200 divide-slate-100 shadow-xs"
+            }`}
+          >
+            {/* Items List with Quantity Add/Remove Controls */}
+            {cart.map((item) => {
+              const itemKey = item.cartKey || `${item.id}-${item.variantName || "base"}`;
+
+              return (
+                <div key={itemKey} className="p-3.5 flex gap-3 items-center justify-between">
+                  {item.imageUrl && (
+                    <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 ${isDark ? "bg-[#282a2b]" : "bg-slate-100"}`}>
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                     </div>
-                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black tracking-wider uppercase border ${
-                      isDark ? "bg-[#9d34ff]/20 text-[#dcb8ff] border-[#9d34ff]/40" : "bg-purple-100 text-purple-800 border-purple-200"
-                    }`}>
-                      DEFAULT
-                    </span>
-                  </div>
-                </label>
-              )}
-
-              {/* UPI Option */}
-              {paymentConfig.isOnlineUpiEnabled && (
-                <label
-                  onClick={() => setPaymentMethod("UPI")}
-                  className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
-                    isDark
-                      ? paymentMethod === "UPI"
-                        ? "glass-card-dark border-[#9d34ff] active-glow"
-                        : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
-                      : paymentMethod === "UPI"
-                      ? "bg-white border-2 border-purple-600 shadow-md"
-                      : "bg-white border border-slate-200 hover:border-purple-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="UPI"
-                    checked={paymentMethod === "UPI"}
-                    onChange={() => setPaymentMethod("UPI")}
-                    className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
-                  />
-                  <div className="flex-1 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
-                        <Wallet className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
-                      </div>
-                      <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
-                        UPI / QR Codes
-                      </span>
-                    </div>
-                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black tracking-wider uppercase border ${
-                      isDark ? "bg-[#9d34ff]/20 text-[#dcb8ff] border-[#9d34ff]/40" : "bg-purple-100 text-purple-800 border-purple-200"
-                    }`}>
-                      INSTANT
-                    </span>
-                  </div>
-                </label>
-              )}
-
-              {/* Card Option */}
-              {paymentConfig.isCreditCardEnabled && (
-                <label
-                  onClick={() => setPaymentMethod("CARD")}
-                  className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
-                    isDark
-                      ? paymentMethod === "CARD"
-                        ? "glass-card-dark border-[#9d34ff] active-glow"
-                        : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
-                      : paymentMethod === "CARD"
-                      ? "bg-white border-2 border-purple-600 shadow-md"
-                      : "bg-white border border-slate-200 hover:border-purple-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="CARD"
-                    checked={paymentMethod === "CARD"}
-                    onChange={() => setPaymentMethod("CARD")}
-                    className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
-                  />
-                  <div className="flex-1 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
-                        <CreditCard className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
-                      </div>
-                      <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
-                        Credit / Debit Card
-                      </span>
-                    </div>
-                  </div>
-                </label>
-              )}
-            </div>
-          </section>
-
-          {/* Delivery / Special Cooking Note */}
-          <section className="flex flex-col gap-3">
-            <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-              Chef Instructions / Notes
-            </h2>
-            <div className="rounded-xl">
-              <textarea
-                value={specialNotes}
-                onChange={(e) => setSpecialNotes(e.target.value)}
-                placeholder="e.g. Extra spicy, no onions, bring glasses..."
-                className={`w-full p-4 rounded-xl border outline-none min-h-[90px] text-xs font-medium transition-all ${
-                  isDark
-                    ? "glass-card-dark bg-[#1e2021] text-[#e2e2e3] border-[#333536] focus:border-[#9d34ff] focus:ring-1 focus:ring-[#9d34ff]"
-                    : "bg-white text-slate-900 border-slate-200 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-xs"
-                }`}
-              />
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN: Bento Order Summary with Edit Controls */}
-        <div className="md:col-span-5">
-          <div className="md:sticky md:top-20 flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-                Order Summary ({cart.reduce((sum, i) => sum + i.quantity, 0)} items)
-              </h2>
-            </div>
-
-            <div
-              className={`rounded-xl overflow-hidden flex flex-col divide-y border ${
-                isDark
-                  ? "glass-card-dark border-[#1c1c1e] divide-[#333536]/40"
-                  : "bg-white border-slate-200 divide-slate-100 shadow-xs"
-              }`}
-            >
-              {/* Items List with Quantity Add/Remove Controls */}
-              {cart.map((item) => {
-                const itemKey = item.cartKey || `${item.id}-${item.variantName || "base"}`;
-
-                return (
-                  <div key={itemKey} className="p-3.5 flex gap-3 items-center justify-between">
-                    {item.imageUrl && (
-                      <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 ${isDark ? "bg-[#282a2b]" : "bg-slate-100"}`}>
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        {item.foodType === "VEG" ? (
-                          <span className="w-3 h-3 rounded-xs border border-emerald-500 flex items-center justify-center p-0.5 flex-shrink-0">
-                            <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                          </span>
-                        ) : (
-                          <span className="w-3 h-3 rounded-xs border border-rose-500 flex items-center justify-center p-0.5 flex-shrink-0">
-                            <span className="w-1 h-1 rounded-full bg-rose-500" />
-                          </span>
-                        )}
-                        <span className={`text-[10px] font-bold uppercase ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                          {item.foodType || "DISH"}
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {item.foodType === "VEG" ? (
+                        <span className="w-3 h-3 rounded-xs border border-emerald-500 flex items-center justify-center p-0.5 flex-shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-emerald-500" />
                         </span>
-                      </div>
-                      <h3 className={`text-sm font-bold truncate ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>{item.name}</h3>
-                      {item.variantName && (
-                        <p className={`text-[10px] font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
-                          Portion: {item.variantName}
-                        </p>
+                      ) : (
+                        <span className="w-3 h-3 rounded-xs border border-rose-500 flex items-center justify-center p-0.5 flex-shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-rose-500" />
+                        </span>
                       )}
-                      {item.selectedAddons && (
-                        <p className={`text-[10px] truncate ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>{item.selectedAddons}</p>
-                      )}
-                      <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
-                        ₹{(item.price * item.quantity).toFixed(2)}
-                      </p>
+                      <span className={`text-[10px] font-bold uppercase ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                        {item.foodType || "DISH"}
+                      </span>
                     </div>
+                    <h3 className={`text-sm font-bold truncate ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>{item.name}</h3>
+                    {item.variantName && (
+                      <p className={`text-[10px] font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                        Portion: {item.variantName}
+                      </p>
+                    )}
+                    {item.selectedAddons && (
+                      <p className={`text-[10px] truncate ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>{item.selectedAddons}</p>
+                    )}
+                    <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
 
-                    {/* Quantity & Delete Controls */}
-                    <div className="flex items-center space-x-2 flex-shrink-0">
-                      <div className={`flex items-center rounded-lg overflow-hidden font-bold border ${isDark ? "bg-[#121415] border-[#4d4355]" : "bg-white border-slate-300"}`}>
-                        <button
-                          type="button"
-                          onClick={() => decrementCartItem(itemKey)}
-                          className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-5 text-center text-xs font-black">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => incrementCartItem(itemKey)}
-                          className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-
+                  {/* Quantity & Delete Controls */}
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <div className={`flex items-center rounded-lg overflow-hidden font-bold border ${isDark ? "bg-[#121415] border-[#4d4355]" : "bg-white border-slate-300"}`}>
                       <button
                         type="button"
-                        onClick={() => deleteCartItem(itemKey)}
-                        className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
-                        title="Remove dish completely"
+                        onClick={() => decrementCartItem(itemKey)}
+                        className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-5 text-center text-xs font-black">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => incrementCartItem(itemKey)}
+                        className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
+                      >
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                  </div>
-                );
-              })}
 
-              {/* Bill Breakdown */}
-              <div className={`p-4 space-y-2 text-xs font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
-                <div className="flex justify-between">
-                  <span>Item Subtotal</span>
-                  <span className={isDark ? "text-[#e2e2e3]" : "text-slate-900"}>₹{totalAmount.toFixed(2)}</span>
+                    <button
+                      type="button"
+                      onClick={() => deleteCartItem(itemKey)}
+                      className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      title="Remove dish completely"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>GST & Service Charges (5%)</span>
-                  <span className={isDark ? "text-[#e2e2e3]" : "text-slate-900"}>₹{taxAmount.toFixed(2)}</span>
-                </div>
-                <div className={`pt-2 border-t flex justify-between text-sm font-extrabold ${isDark ? "border-[#333536] text-white" : "border-slate-200 text-slate-900"}`}>
-                  <span>Grand Total</span>
-                  <span className={`text-base font-black ${isDark ? "text-[#dcb8ff]" : "text-purple-900"}`}>₹{grandTotal.toFixed(2)}</span>
-                </div>
+              );
+            })}
+
+            {/* Bill Breakdown */}
+            <div className={`p-4 space-y-2 text-xs font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
+              <div className="flex justify-between">
+                <span>Item Subtotal</span>
+                <span className={isDark ? "text-[#e2e2e3]" : "text-slate-900"}>₹{totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>GST & Service Charges (5%)</span>
+                <span className={isDark ? "text-[#e2e2e3]" : "text-slate-900"}>₹{taxAmount.toFixed(2)}</span>
+              </div>
+              <div className={`pt-2 border-t flex justify-between text-sm font-extrabold ${isDark ? "border-[#333536] text-white" : "border-slate-200 text-slate-900"}`}>
+                <span>Grand Total</span>
+                <span className={`text-base font-black ${isDark ? "text-[#dcb8ff]" : "text-purple-900"}`}>₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* 3. CHEF INSTRUCTIONS */}
+        <section className="flex flex-col gap-3">
+          <h2 className={`text-base font-extrabold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+            <UtensilsCrossed className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+            <span>Chef Instructions / Notes</span>
+          </h2>
+          <div className="rounded-xl">
+            <textarea
+              value={specialNotes}
+              onChange={(e) => setSpecialNotes(e.target.value)}
+              placeholder="e.g. Extra spicy, no onions, bring glasses..."
+              className={`w-full p-4 rounded-xl border outline-none min-h-[90px] text-xs font-medium transition-all ${
+                isDark
+                  ? "glass-card-dark bg-[#1e2021] text-[#e2e2e3] border-[#333536] focus:border-[#9d34ff] focus:ring-1 focus:ring-[#9d34ff]"
+                  : "bg-white text-slate-900 border-slate-200 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-xs"
+              }`}
+            />
+          </div>
+        </section>
+
+        {/* 4. PAYMENT METHOD */}
+        <section className="flex flex-col gap-3">
+          <h2 className={`text-base font-extrabold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+            <Coins className={`w-4 h-4 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+            <span>Payment Method</span>
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {/* Cash Option (Default Selected if enabled) */}
+            {paymentConfig.isCashEnabled && (
+              <label
+                onClick={() => setPaymentMethod("CASH")}
+                className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
+                  isDark
+                    ? paymentMethod === "CASH"
+                      ? "glass-card-dark border-[#9d34ff] active-glow"
+                      : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
+                    : paymentMethod === "CASH"
+                    ? "bg-white border-2 border-purple-600 shadow-md"
+                    : "bg-white border border-slate-200 hover:border-purple-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value="CASH"
+                  checked={paymentMethod === "CASH"}
+                  onChange={() => setPaymentMethod("CASH")}
+                  className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
+                />
+                <div className="flex-1 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
+                      <Coins className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+                    </div>
+                    <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
+                      Pay Cash at Table
+                    </span>
+                  </div>
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black tracking-wider uppercase border ${
+                    isDark ? "bg-[#9d34ff]/20 text-[#dcb8ff] border-[#9d34ff]/40" : "bg-purple-100 text-purple-800 border-purple-200"
+                  }`}>
+                    DEFAULT
+                  </span>
+                </div>
+              </label>
+            )}
+
+            {/* UPI Option */}
+            {paymentConfig.isOnlineUpiEnabled && (
+              <label
+                onClick={() => setPaymentMethod("UPI")}
+                className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
+                  isDark
+                    ? paymentMethod === "UPI"
+                      ? "glass-card-dark border-[#9d34ff] active-glow"
+                      : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
+                    : paymentMethod === "UPI"
+                    ? "bg-white border-2 border-purple-600 shadow-md"
+                    : "bg-white border border-slate-200 hover:border-purple-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value="UPI"
+                  checked={paymentMethod === "UPI"}
+                  onChange={() => setPaymentMethod("UPI")}
+                  className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
+                />
+                <div className="flex-1 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
+                      <Wallet className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+                    </div>
+                    <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
+                      UPI / QR Codes
+                    </span>
+                  </div>
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black tracking-wider uppercase border ${
+                    isDark ? "bg-[#9d34ff]/20 text-[#dcb8ff] border-[#9d34ff]/40" : "bg-purple-100 text-purple-800 border-purple-200"
+                  }`}>
+                    INSTANT
+                  </span>
+                </div>
+              </label>
+            )}
+
+            {/* Card Option */}
+            {paymentConfig.isCreditCardEnabled && (
+              <label
+                onClick={() => setPaymentMethod("CARD")}
+                className={`p-4 rounded-xl flex items-center gap-4 cursor-pointer group transition-all border ${
+                  isDark
+                    ? paymentMethod === "CARD"
+                      ? "glass-card-dark border-[#9d34ff] active-glow"
+                      : "glass-card-dark border-[#1c1c1e] hover:border-[#4d4355]"
+                    : paymentMethod === "CARD"
+                    ? "bg-white border-2 border-purple-600 shadow-md"
+                    : "bg-white border border-slate-200 hover:border-purple-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value="CARD"
+                  checked={paymentMethod === "CARD"}
+                  onChange={() => setPaymentMethod("CARD")}
+                  className={`w-4 h-4 ${isDark ? "text-[#9d34ff] bg-[#1e2021] border-[#4d4355]" : "text-purple-600"}`}
+                />
+                <div className="flex-1 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg border ${isDark ? "bg-[#1e2021] border-[#333536]" : "bg-purple-50 border-purple-100"}`}>
+                      <CreditCard className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+                    </div>
+                    <span className={`text-sm font-bold ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
+                      Credit / Debit Card
+                    </span>
+                  </div>
+                </div>
+              </label>
+            )}
+          </div>
+        </section>
       </main>
 
       {/* FLOATING ACTION BUTTON */}

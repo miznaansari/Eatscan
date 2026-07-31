@@ -124,25 +124,15 @@ export async function POST(request) {
 
     const taxAmount = totalAmount * 0.05; // 5% GST
     const grandTotal = totalAmount + taxAmount;
-    const orderNumber = `ES-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // 4. Save Customer Order and Items
-    const newOrder = await prisma.customerOrder.create({
-      data: {
-        orderNumber,
+    // 4. Check for EXISTING ACTIVE RUNNING ORDER for this Customer at the SAME Restaurant and SAME Table
+    const existingActiveOrder = await prisma.customerOrder.findFirst({
+      where: {
         customerId: customer.id,
         restaurantId: validRestaurantId,
         qrTableId: qrTable ? qrTable.id : null,
-        totalAmount: totalAmount,
-        taxAmount: taxAmount,
-        grandTotal: grandTotal,
-        orderStatus: "PENDING",
-        paymentStatus: "PENDING",
-        paymentMethod: paymentMethod,
-        specialNotes: specialNotes || null,
-        items: {
-          create: formattedItems,
-        },
+        orderStatus: { in: ["PENDING", "ACCEPTED", "PREPARING"] },
+        isDeleted: false,
       },
       include: {
         items: true,
@@ -152,30 +142,98 @@ export async function POST(request) {
       },
     });
 
+    let targetOrder = null;
+    let isAppended = false;
+
+    if (existingActiveOrder) {
+      // APPEND ITEMS TO EXISTING ACTIVE ORDER!
+      isAppended = true;
+      const newTotalAmount = parseFloat(existingActiveOrder.totalAmount) + totalAmount;
+      const newTaxAmount = newTotalAmount * 0.05;
+      const newGrandTotal = newTotalAmount + newTaxAmount;
+
+      const combinedNotes = specialNotes
+        ? existingActiveOrder.specialNotes
+          ? `${existingActiveOrder.specialNotes} | Add-on: ${specialNotes}`
+          : specialNotes
+        : existingActiveOrder.specialNotes;
+
+      targetOrder = await prisma.customerOrder.update({
+        where: { id: existingActiveOrder.id },
+        data: {
+          totalAmount: newTotalAmount,
+          taxAmount: newTaxAmount,
+          grandTotal: newGrandTotal,
+          specialNotes: combinedNotes,
+          updatedAt: new Date(),
+          items: {
+            create: formattedItems,
+          },
+        },
+        include: {
+          items: true,
+          customer: true,
+          qrTable: true,
+          restaurant: true,
+        },
+      });
+    } else {
+      // CREATE BRAND NEW ORDER
+      const orderNumber = `ES-${Math.floor(1000 + Math.random() * 9000)}`;
+      targetOrder = await prisma.customerOrder.create({
+        data: {
+          orderNumber,
+          customerId: customer.id,
+          restaurantId: validRestaurantId,
+          qrTableId: qrTable ? qrTable.id : null,
+          totalAmount: totalAmount,
+          taxAmount: taxAmount,
+          grandTotal: grandTotal,
+          orderStatus: "PENDING",
+          paymentStatus: "PENDING",
+          paymentMethod: paymentMethod,
+          specialNotes: specialNotes || null,
+          items: {
+            create: formattedItems,
+          },
+        },
+        include: {
+          items: true,
+          customer: true,
+          qrTable: true,
+          restaurant: true,
+        },
+      });
+    }
+
     // 5. Trigger Real-Time SSE Notification to Manager PWA
     orderEvents.emit("new-order", {
       restaurantId: validRestaurantId,
+      isAppended,
       order: {
-        id: newOrder.id,
-        uid: newOrder.uid,
-        orderNumber: newOrder.orderNumber,
+        id: targetOrder.id,
+        uid: targetOrder.uid,
+        orderNumber: targetOrder.orderNumber,
         tableTitle: qrTable ? qrTable.tableTitle : "Direct Order",
         customerName: customer.name,
         customerMobile: customer.mobileNo,
-        grandTotal: newOrder.grandTotal,
-        orderStatus: newOrder.orderStatus,
-        itemCount: newOrder.items.length,
-        createdAt: newOrder.createdAt,
-        items: newOrder.items,
+        grandTotal: targetOrder.grandTotal,
+        orderStatus: targetOrder.orderStatus,
+        itemCount: targetOrder.items.length,
+        createdAt: targetOrder.createdAt,
+        items: targetOrder.items,
       },
     });
 
     return NextResponse.json({
       success: true,
-      orderUid: newOrder.uid,
-      orderNumber: newOrder.orderNumber,
-      grandTotal: newOrder.grandTotal,
-      message: "Order placed successfully!",
+      orderUid: targetOrder.uid,
+      orderNumber: targetOrder.orderNumber,
+      grandTotal: targetOrder.grandTotal,
+      isAppended,
+      message: isAppended
+        ? "Items added to your active running order!"
+        : "Order placed successfully!",
     });
   } catch (error) {
     console.error("Order Creation Error:", error);

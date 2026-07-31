@@ -230,6 +230,9 @@ export default function CustomerMenuPage() {
         };
       }
       localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eatscan_cart_updated"));
+      }
       return updatedCart;
     });
     setSelectedMenuItemForCustomization(null);
@@ -245,6 +248,9 @@ export default function CustomerMenuPage() {
         };
       }
       localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eatscan_cart_updated"));
+      }
       return updatedCart;
     });
   };
@@ -263,6 +269,9 @@ export default function CustomerMenuPage() {
         }
       }
       localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eatscan_cart_updated"));
+      }
 
       if (Object.keys(updatedCart).length === 0) {
         setIsCartDrawerOpen(false);
@@ -276,6 +285,9 @@ export default function CustomerMenuPage() {
       const updatedCart = { ...prevCart };
       delete updatedCart[cartKey];
       localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("eatscan_cart_updated"));
+      }
 
       if (Object.keys(updatedCart).length === 0) {
         setIsCartDrawerOpen(false);
