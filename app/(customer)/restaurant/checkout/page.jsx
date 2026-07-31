@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState([]);
   const [restaurantId, setRestaurantId] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  const [restaurantSlug, setRestaurantSlug] = useState("spice-garden");
   const [tableUid, setTableUid] = useState("");
   const [tableTitle, setTableTitle] = useState("");
   const [specialNotes, setSpecialNotes] = useState("");
@@ -75,6 +76,7 @@ export default function CheckoutPage() {
 
     setRestaurantId(localStorage.getItem("eatscan_restaurant_id") || "");
     setRestaurantName(localStorage.getItem("eatscan_restaurant_name") || "Spice Garden Bistro");
+    setRestaurantSlug(localStorage.getItem("eatscan_restaurant_slug") || "spice-garden");
     setTableUid(localStorage.getItem("eatscan_table_uid") || "");
     setTableTitle(localStorage.getItem("eatscan_table_title") || "Table 01");
 
@@ -202,7 +204,7 @@ export default function CheckoutPage() {
         mobileNo: mobileNo.trim(),
         name: customerName ? customerName.trim() : "Guest Diner",
         restaurantId: restaurantId || null,
-        restaurantSlug: localStorage.getItem("eatscan_restaurant_slug") || "spice-garden",
+        restaurantSlug: restaurantSlug || "spice-garden",
         tableUid: tableUid || null,
         items: cart.map((i) => ({
           menuId: i.id,
@@ -257,7 +259,7 @@ export default function CheckoutPage() {
             Add delicious dishes from the menu to proceed.
           </p>
           <Link
-            href={`/restaurant/${localStorage.getItem("eatscan_restaurant_slug") || "spice-garden"}`}
+            href={`/restaurant/${restaurantSlug}`}
             className={`inline-block px-6 py-3 rounded-2xl font-extrabold text-xs text-white shadow-lg transition-all ${
               isDark
                 ? "bg-[#9d34ff] hover:bg-[#8806ea] shadow-[#9d34ff]/30"
