@@ -21,6 +21,8 @@ import {
   Sun,
   Moon,
   Laptop,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 export default function CheckoutPage() {
@@ -121,6 +123,59 @@ export default function CheckoutPage() {
         : "DARK";
     setThemePreference(nextTheme);
     localStorage.setItem("eatscan_user_theme_override", nextTheme);
+  };
+
+  const incrementCartItem = (targetKey) => {
+    const updatedCart = cart.map((i) => {
+      const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+      if (key === targetKey) {
+        return { ...i, quantity: i.quantity + 1 };
+      }
+      return i;
+    });
+    setCart(updatedCart);
+    const cartObj = {};
+    updatedCart.forEach((i) => {
+      const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+      cartObj[key] = i;
+    });
+    localStorage.setItem("eatscan_cart", JSON.stringify(cartObj));
+  };
+
+  const decrementCartItem = (targetKey) => {
+    const updatedCart = cart
+      .map((i) => {
+        const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+        if (key === targetKey) {
+          if (i.quantity > 1) {
+            return { ...i, quantity: i.quantity - 1 };
+          }
+          return null;
+        }
+        return i;
+      })
+      .filter(Boolean);
+    setCart(updatedCart);
+    const cartObj = {};
+    updatedCart.forEach((i) => {
+      const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+      cartObj[key] = i;
+    });
+    localStorage.setItem("eatscan_cart", JSON.stringify(cartObj));
+  };
+
+  const deleteCartItem = (targetKey) => {
+    const updatedCart = cart.filter((i) => {
+      const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+      return key !== targetKey;
+    });
+    setCart(updatedCart);
+    const cartObj = {};
+    updatedCart.forEach((i) => {
+      const key = i.cartKey || `${i.id}-${i.variantName || "base"}`;
+      cartObj[key] = i;
+    });
+    localStorage.setItem("eatscan_cart", JSON.stringify(cartObj));
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -447,12 +502,15 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        {/* RIGHT COLUMN: Bento Order Summary */}
+        {/* RIGHT COLUMN: Bento Order Summary with Edit Controls */}
         <div className="md:col-span-5">
           <div className="md:sticky md:top-20 flex flex-col gap-4">
-            <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-              Order Summary
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
+                Order Summary ({cart.reduce((sum, i) => sum + i.quantity, 0)} items)
+              </h2>
+            </div>
+
             <div
               className={`rounded-xl overflow-hidden flex flex-col divide-y border ${
                 isDark
@@ -460,42 +518,78 @@ export default function CheckoutPage() {
                   : "bg-white border-slate-200 divide-slate-100 shadow-xs"
               }`}
             >
-              {/* Items List */}
-              {cart.map((item, idx) => (
-                <div key={item.cartKey || `${item.id}-${idx}`} className="p-4 flex gap-3 items-center">
-                  {item.imageUrl && (
-                    <div className={`w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 ${isDark ? "bg-[#282a2b]" : "bg-slate-100"}`}>
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      {item.foodType === "VEG" ? (
-                        <span className="w-3 h-3 rounded-xs border border-emerald-500 flex items-center justify-center p-0.5 flex-shrink-0">
-                          <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                        </span>
-                      ) : (
-                        <span className="w-3 h-3 rounded-xs border border-rose-500 flex items-center justify-center p-0.5 flex-shrink-0">
-                          <span className="w-1 h-1 rounded-full bg-rose-500" />
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-bold uppercase ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                        {item.foodType || "DISH"}
-                      </span>
-                    </div>
-                    <h3 className={`text-sm font-bold truncate ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>{item.name}</h3>
-                    <p className={`text-xs font-medium ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
-                      {item.quantity} x ₹{item.price.toFixed(2)}
-                    </p>
-                    {item.variantName && (
-                      <p className={`text-[10px] font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>Portion: {item.variantName}</p>
+              {/* Items List with Quantity Add/Remove Controls */}
+              {cart.map((item) => {
+                const itemKey = item.cartKey || `${item.id}-${item.variantName || "base"}`;
+
+                return (
+                  <div key={itemKey} className="p-3.5 flex gap-3 items-center justify-between">
+                    {item.imageUrl && (
+                      <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 ${isDark ? "bg-[#282a2b]" : "bg-slate-100"}`}>
+                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        {item.foodType === "VEG" ? (
+                          <span className="w-3 h-3 rounded-xs border border-emerald-500 flex items-center justify-center p-0.5 flex-shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                          </span>
+                        ) : (
+                          <span className="w-3 h-3 rounded-xs border border-rose-500 flex items-center justify-center p-0.5 flex-shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-rose-500" />
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-bold uppercase ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                          {item.foodType || "DISH"}
+                        </span>
+                      </div>
+                      <h3 className={`text-sm font-bold truncate ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>{item.name}</h3>
+                      {item.variantName && (
+                        <p className={`text-[10px] font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                          Portion: {item.variantName}
+                        </p>
+                      )}
+                      {item.selectedAddons && (
+                        <p className={`text-[10px] truncate ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>{item.selectedAddons}</p>
+                      )}
+                      <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Quantity & Delete Controls */}
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <div className={`flex items-center rounded-lg overflow-hidden font-bold border ${isDark ? "bg-[#121415] border-[#4d4355]" : "bg-white border-slate-300"}`}>
+                        <button
+                          type="button"
+                          onClick={() => decrementCartItem(itemKey)}
+                          className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-5 text-center text-xs font-black">{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => incrementCartItem(itemKey)}
+                          className="w-6 h-7 flex items-center justify-center text-xs hover:bg-black/10"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteCartItem(itemKey)}
+                        className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Remove dish completely"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <p className={`text-sm font-black font-mono ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
-                    ₹{(item.price * item.quantity).toFixed(2)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Bill Breakdown */}
               <div className={`p-4 space-y-2 text-xs font-bold ${isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>

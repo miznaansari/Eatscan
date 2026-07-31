@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   Laptop,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -62,6 +63,7 @@ export default function CustomerMenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tableTitle, setTableTitle] = useState("");
   const [cart, setCart] = useState({});
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
 
   // Theme preference state: "DARK" | "LIGHT" | "SYSTEM"
   const [themePreference, setThemePreference] = useState("DARK");
@@ -228,6 +230,15 @@ export default function CustomerMenuPage() {
     setSelectedMenuItemForCustomization(null);
   };
 
+  const incrementCartItemByKey = (cartKey) => {
+    const newCart = { ...cart };
+    if (newCart[cartKey]) {
+      newCart[cartKey].quantity += 1;
+      setCart(newCart);
+      localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+    }
+  };
+
   const removeFromCart = (cartKey) => {
     const newCart = { ...cart };
     if (newCart[cartKey]) {
@@ -237,6 +248,13 @@ export default function CustomerMenuPage() {
         delete newCart[cartKey];
       }
     }
+    setCart(newCart);
+    localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+  };
+
+  const deleteCartItemCompletely = (cartKey) => {
+    const newCart = { ...cart };
+    delete newCart[cartKey];
     setCart(newCart);
     localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
   };
@@ -283,7 +301,7 @@ export default function CustomerMenuPage() {
               {tableTitle || "TABLE 04"}
             </div>
 
-            {/* Theme Toggle Button: LIGHT <-> DARK <-> SYSTEM */}
+            {/* Theme Toggle Button */}
             <button
               type="button"
               onClick={cycleThemePreference}
@@ -686,17 +704,18 @@ export default function CustomerMenuPage() {
                 </span>
               </div>
 
-              <Link
-                href="/restaurant/checkout"
+              <button
+                type="button"
+                onClick={() => setIsCartDrawerOpen(true)}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-95 text-white shadow-lg ${
                   isDark
                     ? "bg-[#9d34ff] hover:bg-[#8806ea] shadow-[#9d34ff]/30"
                     : "bg-purple-600 hover:bg-purple-500 shadow-purple-600/30"
                 }`}
               >
-                <span>View Cart</span>
+                <span>View Cart ({cartTotalCount})</span>
                 <ChevronRight className="w-5 h-5" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -854,6 +873,170 @@ export default function CustomerMenuPage() {
                   </button>
                 );
               })()}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 8. SWIPEABLE QUICK CART SLIDE-UP SHEET */}
+      <AnimatePresence>
+        {isCartDrawerOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCartDrawerOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs cursor-pointer"
+            />
+
+            {/* Swipeable Sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 100) {
+                  setIsCartDrawerOpen(false);
+                }
+              }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className={`relative w-full max-w-lg rounded-t-[32px] p-6 shadow-2xl border-t space-y-4 z-10 max-h-[85vh] flex flex-col justify-between ${
+                isDark
+                  ? "bg-[#121415] border-[#1c1c1e] text-[#e2e2e3]"
+                  : "bg-white border-slate-200 text-slate-900"
+              }`}
+            >
+              {/* Drag Handle Bar */}
+              <div className={`w-12 h-1.5 rounded-full mx-auto -mt-2 cursor-grab ${isDark ? "bg-[#333536]" : "bg-slate-300"}`} />
+
+              {/* Sheet Header */}
+              <div className={`flex items-center justify-between border-b pb-3 ${isDark ? "border-[#1c1c1e]" : "border-slate-200"}`}>
+                <div>
+                  <h3 className={`font-extrabold text-lg leading-snug ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Your Cart ({cartTotalCount} {cartTotalCount === 1 ? "item" : "items"})
+                  </h3>
+                  <span className={`text-xs font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                    Review items or adjust quantity
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCartDrawerOpen(false)}
+                  className={`p-1.5 rounded-xl ${isDark ? "bg-[#1e2021] text-[#cfc2d8]" : "bg-slate-100 text-slate-600"}`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Items List (Scrollable) */}
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[50vh]">
+                {cartItemsArray.map((item) => (
+                  <div
+                    key={item.cartKey}
+                    className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 border ${
+                      isDark ? "bg-[#1e2021] border-[#333536]" : "bg-slate-50 border-slate-200"
+                    }`}
+                  >
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-200/40 flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                        {item.name}
+                      </h4>
+                      {item.variantName && (
+                        <p className={`text-[11px] font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                          Portion: {item.variantName}
+                        </p>
+                      )}
+                      {item.selectedAddons && (
+                        <p className={`text-[10px] truncate ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                          {item.selectedAddons}
+                        </p>
+                      )}
+                      <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Quantity & Delete Controls */}
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <div
+                        className={`flex items-center rounded-lg overflow-hidden font-bold border ${
+                          isDark ? "bg-[#121415] border-[#4d4355]" : "bg-white border-slate-300"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(item.cartKey)}
+                          className="w-7 h-8 flex items-center justify-center text-xs hover:bg-black/10"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-6 text-center text-xs font-black">{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => incrementCartItemByKey(item.cartKey)}
+                          className="w-7 h-8 flex items-center justify-center text-xs hover:bg-black/10"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteCartItemCompletely(item.cartKey)}
+                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Remove dish completely"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total & Checkout Action */}
+              <div className={`pt-3 border-t space-y-3 ${isDark ? "border-[#1c1c1e]" : "border-slate-200"}`}>
+                <div className="flex justify-between items-baseline font-black text-base">
+                  <span className={isDark ? "text-[#cfc2d8]" : "text-slate-700"}>Grand Total:</span>
+                  <span className={`text-xl ${isDark ? "text-[#dcb8ff]" : "text-purple-900"}`}>
+                    ₹{cartTotalPrice.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCartDrawerOpen(false)}
+                    className={`px-4 py-3.5 rounded-2xl font-bold text-xs border ${
+                      isDark ? "bg-[#1e2021] border-[#333536] text-[#cfc2d8]" : "bg-slate-100 border-slate-200 text-slate-700"
+                    }`}
+                  >
+                    Add More Items
+                  </button>
+
+                  <Link
+                    href="/restaurant/checkout"
+                    onClick={() => setIsCartDrawerOpen(false)}
+                    className={`flex-1 py-3.5 rounded-2xl text-white font-black text-sm shadow-xl flex items-center justify-center space-x-2 transition-all active:scale-98 ${
+                      isDark ? "bg-[#9d34ff] hover:bg-[#8806ea]" : "bg-purple-600 hover:bg-purple-700"
+                    }`}
+                  >
+                    <span>Proceed to Checkout</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
