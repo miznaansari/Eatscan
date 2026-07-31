@@ -209,54 +209,79 @@ export default function CustomerMenuPage() {
 
     const cartKey = `${item.id}-${variant ? variant.id : "base"}-${(addonsList || []).map((a) => a.id).sort().join("-")}`;
 
-    const newCart = { ...cart };
-    if (newCart[cartKey]) {
-      newCart[cartKey].quantity += 1;
-    } else {
-      newCart[cartKey] = {
-        cartKey: cartKey,
-        id: item.id,
-        name: item.itemName,
-        price: finalUnitPrice,
-        variantName: variantLabel,
-        selectedAddons: addonsText,
-        quantity: 1,
-        imageUrl: item.imageUrl,
-        foodType: item.foodType,
-      };
-    }
-    setCart(newCart);
-    localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+    setCart((prevCart) => {
+      const updatedCart = { ...prevCart };
+      if (updatedCart[cartKey]) {
+        updatedCart[cartKey] = {
+          ...updatedCart[cartKey],
+          quantity: updatedCart[cartKey].quantity + 1,
+        };
+      } else {
+        updatedCart[cartKey] = {
+          cartKey: cartKey,
+          id: item.id,
+          name: item.itemName,
+          price: finalUnitPrice,
+          variantName: variantLabel,
+          selectedAddons: addonsText,
+          quantity: 1,
+          imageUrl: item.imageUrl,
+          foodType: item.foodType,
+        };
+      }
+      localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      return updatedCart;
+    });
     setSelectedMenuItemForCustomization(null);
   };
 
   const incrementCartItemByKey = (cartKey) => {
-    const newCart = { ...cart };
-    if (newCart[cartKey]) {
-      newCart[cartKey].quantity += 1;
-      setCart(newCart);
-      localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
-    }
+    setCart((prevCart) => {
+      const updatedCart = { ...prevCart };
+      if (updatedCart[cartKey]) {
+        updatedCart[cartKey] = {
+          ...updatedCart[cartKey],
+          quantity: updatedCart[cartKey].quantity + 1,
+        };
+      }
+      localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+      return updatedCart;
+    });
   };
 
   const removeFromCart = (cartKey) => {
-    const newCart = { ...cart };
-    if (newCart[cartKey]) {
-      if (newCart[cartKey].quantity > 1) {
-        newCart[cartKey].quantity -= 1;
-      } else {
-        delete newCart[cartKey];
+    setCart((prevCart) => {
+      const updatedCart = { ...prevCart };
+      if (updatedCart[cartKey]) {
+        if (updatedCart[cartKey].quantity > 1) {
+          updatedCart[cartKey] = {
+            ...updatedCart[cartKey],
+            quantity: updatedCart[cartKey].quantity - 1,
+          };
+        } else {
+          delete updatedCart[cartKey];
+        }
       }
-    }
-    setCart(newCart);
-    localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+      localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+
+      if (Object.keys(updatedCart).length === 0) {
+        setIsCartDrawerOpen(false);
+      }
+      return updatedCart;
+    });
   };
 
   const deleteCartItemCompletely = (cartKey) => {
-    const newCart = { ...cart };
-    delete newCart[cartKey];
-    setCart(newCart);
-    localStorage.setItem("eatscan_cart", JSON.stringify(newCart));
+    setCart((prevCart) => {
+      const updatedCart = { ...prevCart };
+      delete updatedCart[cartKey];
+      localStorage.setItem("eatscan_cart", JSON.stringify(updatedCart));
+
+      if (Object.keys(updatedCart).length === 0) {
+        setIsCartDrawerOpen(false);
+      }
+      return updatedCart;
+    });
   };
 
   const cartItemsArray = Object.values(cart);
