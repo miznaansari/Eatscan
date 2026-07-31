@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Trash2, Utensils, ArrowLeft, Image as ImageIcon, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Utensils, ArrowLeft, Image as ImageIcon, CheckCircle2, Upload, Loader2, Camera } from "lucide-react";
 
 export default function ManagerMenuPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function ManagerMenuPage() {
   // New Category state
   const [newCatName, setNewCatName] = useState("");
   const [newCatImage, setNewCatImage] = useState("");
+  const [uploadingCatImg, setUploadingCatImg] = useState(false);
 
   // New Item state
   const [itemName, setItemName] = useState("");
@@ -21,7 +22,12 @@ export default function ManagerMenuPage() {
   const [discountPrice, setDiscountPrice] = useState("");
   const [foodType, setFoodType] = useState("VEG");
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadingItemImg, setUploadingItemImg] = useState(false);
   const [selectedCatId, setSelectedCatId] = useState("");
+
+  // Existing item/category upload progress states
+  const [uploadingCatId, setUploadingCatId] = useState(null);
+  const [uploadingItemId, setUploadingItemId] = useState(null);
 
   const fetchMenu = async (id) => {
     try {
@@ -49,6 +55,117 @@ export default function ManagerMenuPage() {
     setRestaurantId(id);
     fetchMenu(id);
   }, [router]);
+
+  const handleFileUpload = async (file, folderType, setUrlState, setUploadingState) => {
+    if (!file) return;
+    setUploadingState(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", folderType); // category, menuItem, or restaurant
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.url) {
+        setUrlState(data.url);
+      } else {
+        alert(data.error || "Upload failed");
+      }
+    } catch (err) {
+      console.error("File upload error:", err);
+      alert("Failed to upload image to Cloudflare R2");
+    } finally {
+      setUploadingState(false);
+    }
+  };
+
+  // Upload & update image for EXISTING category
+  const handleUpdateCategoryImage = async (catId, file) => {
+    if (!file) return;
+    setUploadingCatId(catId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "category");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadData.success || !uploadData.url) {
+        throw new Error(uploadData.error || "Image upload failed");
+      }
+
+      const updateRes = await fetch("/api/restaurant/menu", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "CATEGORY",
+          id: catId,
+          categoryImage: uploadData.url,
+        }),
+      });
+
+      if (updateRes.ok) {
+        fetchMenu(restaurantId);
+      } else {
+        alert("Failed to update category image in database");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to update category image");
+    } finally {
+      setUploadingCatId(null);
+    }
+  };
+
+  // Upload & update image for EXISTING menu item
+  const handleUpdateMenuItemImage = async (itemId, file) => {
+    if (!file) return;
+    setUploadingItemId(itemId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "menuItem");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadData.success || !uploadData.url) {
+        throw new Error(uploadData.error || "Image upload failed");
+      }
+
+      const updateRes = await fetch("/api/restaurant/menu", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "MENU_ITEM",
+          id: itemId,
+          imageUrl: uploadData.url,
+        }),
+      });
+
+      if (updateRes.ok) {
+        fetchMenu(restaurantId);
+      } else {
+        alert("Failed to update item image in database");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to update item image");
+    } finally {
+      setUploadingItemId(null);
+    }
+  };
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -145,29 +262,57 @@ export default function ManagerMenuPage() {
         {/* Create Category Form */}
         <section className="glass-card p-5 rounded-2xl bg-white border border-white/80 shadow-sm space-y-3">
           <h2 className="font-extrabold text-sm text-slate-900 uppercase">1. Add Menu Category</h2>
-          <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              required
-              placeholder="Category Name (e.g. Desserts, Starters)"
-              value={newCatName}
-              onChange={(e) => setNewCatName(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <input
-              type="url"
-              placeholder="Category Image URL (optional)"
-              value={newCatImage}
-              onChange={(e) => setNewCatImage(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 flex items-center justify-center space-x-1"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Category</span>
-            </button>
+          <form onSubmit={handleAddCategory} className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                required
+                placeholder="Category Name (e.g. Desserts, Starters)"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <input
+                type="url"
+                placeholder="Category Image URL"
+                value={newCatImage}
+                onChange={(e) => setNewCatImage(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 flex items-center justify-center space-x-1"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Category</span>
+              </button>
+            </div>
+
+            {/* Cloudflare R2 Category Image Upload */}
+            <div className="flex items-center space-x-3 text-xs">
+              <label className="cursor-pointer px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold border border-purple-200 flex items-center space-x-1.5">
+                {uploadingCatImg ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                <span>{uploadingCatImg ? "Processing R2 Sizes..." : "Upload Category Image"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files?.[0], "category", setNewCatImage, setUploadingCatImg)}
+                />
+              </label>
+
+              {newCatImage && (
+                <div className="flex items-center space-x-2 text-[11px] font-bold text-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>R2 Image Ready</span>
+                  <img src={newCatImage} alt="Category Preview" className="w-6 h-6 rounded-md object-cover border border-slate-200" />
+                </div>
+              )}
+            </div>
           </form>
         </section>
 
@@ -242,15 +387,39 @@ export default function ManagerMenuPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Image URL</label>
-              <input
-                type="url"
-                placeholder="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=600"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none"
-              />
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase">Item Image</label>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="url"
+                  placeholder="Image URL or upload image file below"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="flex-1 px-3 py-2.5 rounded-xl glass-input text-xs font-semibold focus:outline-none"
+                />
+                <label className="cursor-pointer px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center space-x-1.5 shadow-sm">
+                  {uploadingItemImg ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  <span>{uploadingItemImg ? "Uploading R2..." : "Upload File to R2"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e.target.files?.[0], "menuItem", setImageUrl, setUploadingItemImg)}
+                  />
+                </label>
+              </div>
+
+              {imageUrl && (
+                <div className="flex items-center space-x-2 text-[11px] font-bold text-emerald-600 pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>R2 Cloudflare Image Linked</span>
+                  <img src={imageUrl} alt="Item Preview" className="w-8 h-8 rounded-lg object-cover border border-slate-200" />
+                </div>
+              )}
             </div>
 
             <button
@@ -267,37 +436,97 @@ export default function ManagerMenuPage() {
           <h2 className="font-extrabold text-base text-slate-900">Current Catalog</h2>
 
           {categories.map((cat) => (
-            <div key={cat.id} className="glass-card p-5 rounded-2xl bg-white border border-white/80 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b pb-2">
-                <h3 className="font-black text-sm text-purple-700">{cat.categoryName}</h3>
-                <button
-                  onClick={() => handleDelete(cat.id, "CATEGORY")}
-                  className="text-xs font-bold text-rose-600 hover:underline flex items-center space-x-1"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete Category</span>
-                </button>
+            <div key={cat.id} className="glass-card p-5 rounded-2xl bg-white border border-white/80 shadow-sm space-y-4">
+              {/* Category Header with Upload/Edit Image Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 gap-2">
+                <div className="flex items-center space-x-3">
+                  {cat.categoryImage ? (
+                    <img src={cat.categoryImage} alt={cat.categoryName} className="w-9 h-9 rounded-full object-cover border border-purple-200 shadow-xs" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-black">
+                      <Utensils className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-black text-sm text-slate-900">{cat.categoryName}</h3>
+                    <span className="text-[10px] font-bold text-slate-500">{cat.menus?.length || 0} items</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {/* Category Image Upload Button */}
+                  <label className="cursor-pointer px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs border border-purple-200 flex items-center space-x-1.5 transition-all">
+                    {uploadingCatId === cat.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                    ) : (
+                      <Camera className="w-3.5 h-3.5" />
+                    )}
+                    <span>{uploadingCatId === cat.id ? "Uploading R2..." : cat.categoryImage ? "Change Image" : "Upload Image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUpdateCategoryImage(cat.id, e.target.files?.[0])}
+                    />
+                  </label>
+
+                  <button
+                    onClick={() => handleDelete(cat.id, "CATEGORY")}
+                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                    title="Delete Category"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
+              {/* Category Food Items Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {cat.menus?.map((item) => (
-                  <div key={item.id} className="p-3 rounded-xl bg-slate-50 border flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-xs text-slate-900">{item.itemName}</span>
-                        <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
-                          {item.foodType}
-                        </span>
+                  <div key={item.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between space-x-2 hover:shadow-xs transition-all">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.itemName} className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-black flex-shrink-0">
+                          No Img
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-1.5 truncate">
+                          <span className="font-bold text-xs text-slate-900 truncate">{item.itemName}</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 flex-shrink-0">
+                            {item.foodType}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono font-black text-slate-800">₹{parseFloat(item.price).toFixed(2)}</span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-slate-700">₹{parseFloat(item.price).toFixed(2)}</span>
                     </div>
 
-                    <button
-                      onClick={() => handleDelete(item.id, "MENU_ITEM")}
-                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      {/* Menu Item Image Upload Button */}
+                      <label className="cursor-pointer p-2 rounded-xl bg-white border border-slate-200 text-purple-700 hover:bg-purple-50 transition-all" title="Upload/Change Dish Image">
+                        {uploadingItemId === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Camera className="w-3.5 h-3.5" />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUpdateMenuItemImage(item.id, e.target.files?.[0])}
+                        />
+                      </label>
+
+                      <button
+                        onClick={() => handleDelete(item.id, "MENU_ITEM")}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

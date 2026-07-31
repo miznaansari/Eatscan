@@ -238,3 +238,26 @@ html, body {
   background: rgba(196, 181, 253, 0.6);
   border-radius: 9999px;
 }
+
+/* Stitch MCP Dark Theme & Electric Purple Utilities */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.glass-card-dark {
+  background: rgba(10, 10, 11, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #1C1C1E;
+}
+
+.active-glow {
+  box-shadow: 0 0 18px rgba(157, 52, 255, 0.45);
+}
+
+.bg-mesh {
+  background: radial-gradient(circle at 50% 50%, rgba(157, 52, 255, 0.14) 0%, rgba(18, 20, 21, 0) 75%);
+}
+
+.checkmark-glow {
+  filter: drop-shadow(0 0 20px rgba(157, 52, 255, 0.5));
+}

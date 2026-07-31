@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Search,
@@ -13,13 +12,42 @@ import {
   X,
   Utensils,
   Plus,
+  Minus,
   Grid,
   Flame,
-  ArrowRight,
-  Receipt,
+  Star,
   Sparkles,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+function getCategoryImageUrl(cat) {
+  if (cat?.categoryImage) return cat.categoryImage;
+  const name = (cat?.categoryName || "").toLowerCase();
+  if (name.includes("starter") || name.includes("appetizer") || name.includes("snack")) {
+    return "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=200";
+  }
+  if (name.includes("main") || name.includes("curry") || name.includes("thali") || name.includes("rice")) {
+    return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200";
+  }
+  if (name.includes("drink") || name.includes("mocktail") || name.includes("beverage") || name.includes("juice")) {
+    return "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=200";
+  }
+  if (name.includes("dessert") || name.includes("sweet") || name.includes("cake") || name.includes("ice")) {
+    return "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=200";
+  }
+  if (name.includes("pizza") || name.includes("burger") || name.includes("fast")) {
+    return "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200";
+  }
+  return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200";
+}
+
+function getItemImageUrl(item) {
+  if (item?.imageUrl) return item.imageUrl;
+  return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200";
+}
 
 export default function CustomerMenuPage() {
   const params = useParams();
@@ -35,8 +63,23 @@ export default function CustomerMenuPage() {
   const [tableTitle, setTableTitle] = useState("");
   const [cart, setCart] = useState({});
 
+  // Theme preference state: "DARK" | "LIGHT" | "SYSTEM"
+  const [themePreference, setThemePreference] = useState("DARK");
+  const [systemIsDark, setSystemIsDark] = useState(true);
+
   // Pending Order state
   const [pendingOrder, setPendingOrder] = useState(null);
+
+  // Listen for system theme media query changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      setSystemIsDark(mediaQuery.matches);
+      const handler = (e) => setSystemIsDark(e.matches);
+      mediaQuery.addEventListener("change", handler);
+      return () => mediaQuery.removeEventListener("change", handler);
+    }
+  }, []);
 
   useEffect(() => {
     // Read table title from localStorage if available
@@ -49,6 +92,15 @@ export default function CustomerMenuPage() {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {}
+    }
+
+    // Check for user theme override
+    const userOverride = localStorage.getItem("eatscan_user_theme_override");
+    const savedRestTheme = localStorage.getItem("eatscan_restaurant_theme_mode");
+    if (userOverride) {
+      setThemePreference(userOverride);
+    } else if (savedRestTheme) {
+      setThemePreference(savedRestTheme);
     }
 
     // Check for pending order in browser
@@ -80,6 +132,22 @@ export default function CustomerMenuPage() {
           localStorage.setItem("eatscan_restaurant_id", data.restaurant.id);
           localStorage.setItem("eatscan_restaurant_name", data.restaurant.restaurantName);
           localStorage.setItem("eatscan_restaurant_slug", data.restaurant.slug || restaurantSlug);
+
+          // Save restaurant payment options config
+          const paymentConfig = {
+            isCashEnabled: data.restaurant.isCashEnabled ?? true,
+            isOnlineUpiEnabled: data.restaurant.isOnlineUpiEnabled ?? true,
+            isCreditCardEnabled: data.restaurant.isCreditCardEnabled ?? true,
+          };
+          localStorage.setItem("eatscan_payment_config", JSON.stringify(paymentConfig));
+
+          // Set default theme from restaurant if no user override exists
+          const restTheme = data.restaurant.themeMode || "DARK";
+          localStorage.setItem("eatscan_restaurant_theme_mode", restTheme);
+          const override = localStorage.getItem("eatscan_user_theme_override");
+          if (!override) {
+            setThemePreference(restTheme);
+          }
         }
       } catch (err) {
         console.error("Error loading menu:", err);
@@ -90,6 +158,25 @@ export default function CustomerMenuPage() {
 
     fetchMenu();
   }, [restaurantSlug]);
+
+  // Compute active dark mode boolean based on themePreference & system theme
+  const isDark =
+    themePreference === "DARK"
+      ? true
+      : themePreference === "LIGHT"
+      ? false
+      : systemIsDark;
+
+  const cycleThemePreference = () => {
+    const nextTheme =
+      themePreference === "DARK"
+        ? "LIGHT"
+        : themePreference === "LIGHT"
+        ? "SYSTEM"
+        : "DARK";
+    setThemePreference(nextTheme);
+    localStorage.setItem("eatscan_user_theme_override", nextTheme);
+  };
 
   // Customization Bottom Sheet State for Variants & Addons
   const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState(null);
@@ -159,204 +246,274 @@ export default function CustomerMenuPage() {
   const cartTotalPrice = cartItemsArray.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
 
   return (
-    <div className="min-h-screen pb-32 bg-white text-slate-950 selection:bg-purple-600 selection:text-white">
-      {/* Sticky Navigation Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs px-4 py-3">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+    <div
+      className={`min-h-screen pb-32 transition-colors duration-300 ${
+        isDark ? "bg-[#121415] text-[#e2e2e3]" : "bg-[#faf8ff] text-slate-900"
+      }`}
+    >
+      {/* 1. TOP APPBAR WITH THEME TOGGLE */}
+      <header
+        className={`sticky top-0 z-50 h-16 border-b backdrop-blur-md px-4 transition-colors ${
+          isDark ? "bg-[#121415]/95 border-[#333536]/40" : "bg-white/95 border-slate-200 shadow-xs"
+        }`}
+      >
+        <div className="max-w-4xl mx-auto h-full flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-600/20">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
+                isDark ? "bg-[#9d34ff] text-white shadow-[#9d34ff]/30" : "bg-purple-600 text-white shadow-purple-600/20"
+              }`}
+            >
               <Utensils className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
-                  {restaurant?.restaurantName || "Restaurant Menu"}
-                </h1>
-                {tableTitle && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-slate-950 text-white font-black text-[10px] shadow-xs uppercase tracking-wider">
-                    {tableTitle}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center space-x-1.5 text-[11px] font-bold text-purple-700 mt-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Instant QR Menu • Active Session</span>
-              </div>
-            </div>
+            <span className={`text-xl font-extrabold tracking-tight ${isDark ? "text-[#dcb8ff]" : "text-purple-950"}`}>
+              {restaurant?.restaurantName || "Spice Garden Bistro"}
+            </span>
           </div>
 
-          <Link
-            href="/"
-            className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs transition-all border border-slate-200"
-          >
-            EatScan
-          </Link>
+          <div className="flex items-center space-x-2">
+            {/* Table Badge */}
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                isDark
+                  ? "bg-[#282a2b] border-[#4d4355] text-[#e2e2e3]"
+                  : "bg-slate-950 border-slate-900 text-white"
+              }`}
+            >
+              {tableTitle || "TABLE 04"}
+            </div>
+
+            {/* Theme Toggle Button: LIGHT <-> DARK <-> SYSTEM */}
+            <button
+              type="button"
+              onClick={cycleThemePreference}
+              title={`Current Theme: ${themePreference}. Click to switch mode.`}
+              className={`p-2 rounded-xl flex items-center space-x-1 border transition-all ${
+                isDark
+                  ? "bg-[#1e2021] border-[#333536] text-[#dcb8ff] hover:bg-[#282a2b]"
+                  : "bg-slate-100 border-slate-200 text-purple-700 hover:bg-slate-200"
+              }`}
+            >
+              {themePreference === "DARK" && <Moon className="w-4 h-4 text-[#dcb8ff]" />}
+              {themePreference === "LIGHT" && <Sun className="w-4 h-4 text-amber-500" />}
+              {themePreference === "SYSTEM" && <Laptop className="w-4 h-4 text-indigo-400" />}
+              <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
+                {themePreference}
+              </span>
+            </button>
+
+            {/* Search Trigger */}
+            <button
+              type="button"
+              onClick={() => {
+                const searchEl = document.getElementById("menu-search-input");
+                if (searchEl) searchEl.focus();
+              }}
+              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
+                isDark ? "text-[#cfc2d8] hover:bg-[#282a2b]" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* CONDITIONAL PENDING ORDER STATUS BANNER */}
+      {/* 2. CONDITIONAL PENDING ORDER BANNER */}
       {pendingOrder && (
-        <div className="bg-purple-600 text-white px-4 py-3 shadow-md">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-                <Flame className="w-4 h-4 text-amber-300" />
-              </div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-wider text-purple-100">
-                  Active Order #{pendingOrder.orderNumber}
-                </div>
-                <div className="text-xs font-bold text-white">
-                  Status: <span className="underline font-black">{pendingOrder.orderStatus}</span> • ₹
-                  {parseFloat(pendingOrder.grandTotal).toFixed(2)}
-                </div>
-              </div>
+        <div className={`px-4 py-2.5 text-xs font-bold shadow-md ${isDark ? "bg-[#9d34ff] text-white" : "bg-purple-600 text-white"}`}>
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Flame className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Active Order #{pendingOrder.orderNumber} ({pendingOrder.orderStatus})</span>
             </div>
             <Link
               href={`/restaurant/order/${pendingOrder.uid}`}
-              className="px-3.5 py-1.5 rounded-xl bg-white text-purple-700 font-black text-xs hover:bg-purple-50 transition-all flex items-center space-x-1 shadow-xs"
+              className="px-3 py-1 rounded-lg bg-white text-purple-700 font-black text-xs hover:bg-purple-50 transition-all"
             >
-              <span>Track Live Status</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              Track Order →
             </Link>
           </div>
         </div>
       )}
 
-      {/* Main Container */}
-      <div className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
-        {/* Search Bar & Veg/Non-Veg Filter */}
-        <section className="space-y-3">
+      {/* MAIN CONTAINER */}
+      <main className="max-w-4xl mx-auto px-4 pt-4 space-y-6">
+        {/* 3. SEARCH & QUICK FILTER CHIPS */}
+        <section className="flex flex-col gap-3">
           <div className="relative">
-            <Search className="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-600" />
+            <Search className={`w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? "text-[#cfc2d8]" : "text-slate-400"}`} />
             <input
+              id="menu-search-input"
               type="text"
-              placeholder="Search dishes, drinks, starters..."
+              placeholder="Search menu items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-8 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-xs"
+              className={`w-full border rounded-xl py-3 pl-12 pr-10 text-sm font-medium outline-none transition-all ${
+                isDark
+                  ? "bg-[#1e2021] border-[#4d4355]/30 text-[#e2e2e3] focus:border-[#9d34ff] focus:ring-1 focus:ring-[#9d34ff]"
+                  : "bg-white border-slate-200 text-slate-900 focus:border-purple-600 shadow-xs"
+              }`}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-[#cfc2d8] hover:text-white" : "text-slate-400"}`}
               >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center space-x-2 text-xs font-black">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setFilterType("ALL")}
-              className={`px-4 py-2 rounded-xl transition-all border ${
+              className={`px-5 py-2 rounded-full whitespace-nowrap transition-all active:scale-95 ${
                 filterType === "ALL"
-                  ? "bg-purple-600 text-white border-purple-600 shadow-sm"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  ? isDark
+                    ? "bg-[#9d34ff] text-white shadow-md shadow-[#9d34ff]/20 font-extrabold"
+                    : "bg-purple-600 text-white shadow-md font-extrabold"
+                  : isDark
+                  ? "bg-[#1e2021] border border-[#4d4355]/30 text-[#e2e2e3] hover:border-[#9d34ff]"
+                  : "bg-white border border-slate-200 text-slate-700 shadow-xs hover:border-purple-300"
               }`}
             >
-              All Dishes
+              All Items
             </button>
             <button
               type="button"
               onClick={() => setFilterType("VEG")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 border ${
+              className={`px-5 py-2 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95 ${
                 filterType === "VEG"
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                  : "bg-white text-emerald-700 border-slate-200 hover:bg-emerald-50"
+                  ? "bg-emerald-600 text-white shadow-md font-extrabold"
+                  : isDark
+                  ? "bg-[#1e2021] border border-[#4d4355]/30 text-[#e2e2e3] hover:border-emerald-500"
+                  : "bg-white border border-slate-200 text-emerald-700 shadow-xs hover:border-emerald-300"
               }`}
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span>Veg Only</span>
             </button>
             <button
               type="button"
               onClick={() => setFilterType("NON_VEG")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 border ${
+              className={`px-5 py-2 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95 ${
                 filterType === "NON_VEG"
-                  ? "bg-rose-600 text-white border-rose-600 shadow-sm"
-                  : "bg-white text-rose-700 border-slate-200 hover:bg-rose-50"
+                  ? "bg-rose-600 text-white shadow-md font-extrabold"
+                  : isDark
+                  ? "bg-[#1e2021] border border-[#4d4355]/30 text-[#e2e2e3] hover:border-rose-500"
+                  : "bg-white border border-slate-200 text-rose-700 shadow-xs hover:border-rose-300"
               }`}
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
               <span>Non-Veg</span>
             </button>
           </div>
         </section>
 
-        {/* Sticky Category Tabs with Category Images */}
-        <section className="sticky top-[58px] z-30 py-2.5 bg-white/95 backdrop-blur-md border-y border-slate-200 -mx-4 px-4 shadow-xs">
-          <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5 text-xs font-black">
+        {/* 4. STICKY CATEGORY NAV CHIPS */}
+        <section
+          className={`sticky top-16 z-40 backdrop-blur-md border-b py-3 -mx-4 px-4 transition-colors ${
+            isDark ? "bg-[#121415]/90 border-[#333536]/30" : "bg-[#faf8ff]/90 border-slate-200"
+          }`}
+        >
+          <div className="flex gap-3 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => {
                 setActiveCategory("ALL");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className={`px-4 py-2 rounded-2xl whitespace-nowrap transition-all flex items-center space-x-2 border ${
-                activeCategory === "ALL"
-                  ? "bg-purple-600 text-white border-purple-600 shadow-md"
-                  : "bg-slate-50 text-slate-800 border-slate-200 hover:border-purple-300"
-              }`}
+              className="flex flex-col items-center gap-1 min-w-[72px] group"
             >
-              <Grid className="w-4 h-4 text-white/90" />
-              <span>All Categories</span>
-            </button>
-
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  const el = document.getElementById(`cat-${cat.id}`);
-                  if (el) {
-                    const offset = 140;
-                    const bodyRect = document.body.getBoundingClientRect().top;
-                    const elementRect = el.getBoundingClientRect().top;
-                    const elementPosition = elementRect - bodyRect;
-                    const offsetPosition = elementPosition - offset;
-                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                  }
-                }}
-                className={`px-3.5 py-1.5 rounded-2xl whitespace-nowrap transition-all flex items-center space-x-2 border ${
-                  activeCategory === cat.id
-                    ? "bg-purple-600 text-white border-purple-600 shadow-md font-black"
-                    : "bg-slate-50 text-slate-800 border-slate-200 hover:border-purple-300"
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-active:scale-90 ${
+                  activeCategory === "ALL"
+                    ? isDark
+                      ? "bg-[#9d34ff] text-white active-glow"
+                      : "bg-purple-600 text-white shadow-md"
+                    : isDark
+                    ? "bg-[#282a2b] text-[#cfc2d8] hover:bg-[#333536]"
+                    : "bg-white text-slate-700 border border-slate-200"
                 }`}
               >
-                {cat.categoryImage ? (
-                  <img
-                    src={cat.categoryImage}
-                    alt={cat.categoryName}
-                    className="w-5 h-5 rounded-full object-cover border border-white/40"
-                  />
-                ) : (
-                  <Utensils className={`w-3.5 h-3.5 ${activeCategory === cat.id ? "text-white" : "text-purple-600"}`} />
-                )}
-                <span>{cat.categoryName}</span>
-              </button>
-            ))}
+                <Grid className="w-6 h-6" />
+              </div>
+              <span className={`text-xs font-bold ${activeCategory === "ALL" ? (isDark ? "text-[#dcb8ff]" : "text-purple-700") : isDark ? "text-[#cfc2d8]" : "text-slate-600"}`}>
+                All
+              </span>
+            </button>
+
+            {categories.map((cat) => {
+              const catImg = getCategoryImageUrl(cat);
+              const isActive = activeCategory === cat.id;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    const el = document.getElementById(`cat-${cat.id}`);
+                    if (el) {
+                      const offset = 120;
+                      const bodyRect = document.body.getBoundingClientRect().top;
+                      const elementRect = el.getBoundingClientRect().top;
+                      const elementPosition = elementRect - bodyRect;
+                      const offsetPosition = elementPosition - offset;
+                      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }
+                  }}
+                  className="flex flex-col items-center gap-1 min-w-[72px] group"
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl overflow-hidden p-0.5 flex items-center justify-center transition-all group-active:scale-90 ${
+                      isActive
+                        ? isDark
+                          ? "bg-[#9d34ff] active-glow"
+                          : "bg-purple-600 shadow-md"
+                        : isDark
+                        ? "bg-[#282a2b]"
+                        : "bg-white border border-slate-200"
+                    }`}
+                  >
+                    <img
+                      src={catImg}
+                      alt={cat.categoryName}
+                      className="w-full h-full rounded-xl object-cover"
+                    />
+                  </div>
+                  <span
+                    className={`text-xs font-bold truncate max-w-[76px] ${
+                      isActive
+                        ? isDark
+                          ? "text-[#dcb8ff]"
+                          : "text-purple-700"
+                        : isDark
+                        ? "text-[#cfc2d8]"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {cat.categoryName}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
-      </div>
 
-      {/* Menu Categories & Item Lists */}
-      <main className="max-w-3xl mx-auto px-4 pt-4 space-y-8">
+        {/* 5. MENU SECTIONS */}
         {loading ? (
-          /* High Speed Single Pass Skeleton Loader */
-          <div className="space-y-6">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-3 animate-pulse">
-                <div className="h-7 w-40 bg-slate-200 rounded-xl" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[1, 2].map((j) => (
-                    <div key={j} className="h-32 bg-slate-100 rounded-3xl border border-slate-200 p-4" />
-                  ))}
-                </div>
-              </div>
+              <div
+                key={i}
+                className={`h-28 rounded-2xl border animate-pulse ${
+                  isDark ? "bg-[#1e2021] border-[#333536]" : "bg-white border-slate-200"
+                }`}
+              />
             ))}
           </div>
         ) : (
@@ -370,134 +527,133 @@ export default function CustomerMenuPage() {
             if (filteredMenus.length === 0) return null;
 
             return (
-              <section id={`cat-${cat.id}`} key={cat.id} className="space-y-4 scroll-mt-48">
-                {/* Category Header with Category Image */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <div className="flex items-center space-x-3">
-                    {cat.categoryImage ? (
-                      <img
-                        src={cat.categoryImage}
-                        alt={cat.categoryName}
-                        className="w-9 h-9 rounded-2xl object-cover border border-slate-200 shadow-xs"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-black">
-                        <Utensils className="w-4 h-4" />
-                      </div>
-                    )}
-                    <div>
-                      <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                        {cat.categoryName}
-                      </h2>
-                      {cat.description && (
-                        <p className="text-xs text-slate-500 font-medium">{cat.description}</p>
-                      )}
-                    </div>
+              <section id={`cat-${cat.id}`} key={cat.id} className="scroll-mt-36 space-y-4 py-2">
+                {/* Section Header */}
+                <div className={`flex justify-between items-end border-b pb-2 ${isDark ? "border-[#333536]/30" : "border-slate-200"}`}>
+                  <div>
+                    <h2 className={`text-xl font-extrabold flex items-center gap-2 ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
+                      <Star className={`w-5 h-5 ${isDark ? "text-[#dcb8ff]" : "text-purple-600"}`} />
+                      <span>{cat.categoryName}</span>
+                    </h2>
+                    <p className={`text-xs mt-0.5 ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>Chef's special curated selection</p>
                   </div>
-
-                  <span className="text-[11px] font-black text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full shadow-xs">
-                    {filteredMenus.length} items
+                  <span
+                    className={`text-xs font-bold px-2.5 py-1 rounded-md border ${
+                      isDark
+                        ? "text-[#cfc2d8] bg-[#1e2021] border-[#333536]"
+                        : "text-slate-600 bg-white border-slate-200"
+                    }`}
+                  >
+                    {filteredMenus.length} {filteredMenus.length === 1 ? "ITEM" : "ITEMS"}
                   </span>
                 </div>
 
-                {/* Dish Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Grid of Dishes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredMenus.map((item) => {
                     const hasDiscount = item.discountPrice && parseFloat(item.discountPrice) < parseFloat(item.price);
+                    const dishImg = getItemImageUrl(item);
+
+                    const itemCartEntries = Object.values(cart).filter((c) => c.id === item.id);
+                    const totalItemQty = itemCartEntries.reduce((sum, c) => sum + c.quantity, 0);
 
                     return (
                       <div
                         key={item.id}
-                        className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex justify-between space-x-3 relative overflow-hidden"
+                        className={`rounded-2xl p-4 flex gap-4 items-center transition-all ${
+                          isDark
+                            ? totalItemQty > 0
+                              ? "glass-card-dark border-[#9d34ff]/40 active-glow"
+                              : "glass-card-dark border-[#1c1c1e]"
+                            : totalItemQty > 0
+                            ? "bg-white border-2 border-purple-600 shadow-md"
+                            : "bg-white border border-slate-200 shadow-xs"
+                        }`}
                       >
-                        <div className="flex-1 space-y-1.5">
-                          <div className="flex items-center space-x-1.5">
-                            {item.foodType === "VEG" ? (
-                              <span className="w-3.5 h-3.5 border border-emerald-600 flex items-center justify-center p-0.5 rounded-sm bg-emerald-50">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                              </span>
-                            ) : (
-                              <span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-0.5 rounded-sm bg-rose-50">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                              </span>
-                            )}
-                            <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                              Chef Special
-                            </span>
+                        {/* Food Image Thumbnail */}
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-24 h-24 rounded-xl overflow-hidden ${isDark ? "bg-[#282a2b]" : "bg-slate-100 border border-slate-200"}`}>
+                            <img
+                              src={dishImg}
+                              alt={item.itemName}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-
-                          <h3 className="font-black text-slate-900 text-sm sm:text-base leading-tight">
-                            {item.itemName}
-                          </h3>
-
-                          <div className="flex items-baseline space-x-2">
-                            <span className="font-black text-slate-900 text-base">
-                              ₹{item.discountPrice ? item.discountPrice : item.price}
-                            </span>
-                            {hasDiscount && (
-                              <span className="text-xs text-slate-400 line-through font-semibold">₹{item.price}</span>
-                            )}
-                          </div>
-
-                          <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-medium">
-                            {item.description}
-                          </p>
                         </div>
 
-                        {/* Dish Thumbnail Image & Add Button */}
-                        <div className="flex flex-col items-center justify-between flex-shrink-0 w-28">
-                          <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.itemName} className="w-full h-full object-cover" />
+                        {/* Details */}
+                        <div className="flex-grow min-w-0 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            {item.foodType === "VEG" ? (
+                              <span className="w-3.5 h-3.5 rounded-xs border border-emerald-500 flex items-center justify-center flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              </span>
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-400 text-[10px] font-black bg-slate-100">
-                                EatScan
-                              </div>
+                              <span className="w-3.5 h-3.5 rounded-xs border border-rose-500 flex items-center justify-center flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              </span>
                             )}
+                            <h3 className={`font-bold text-base truncate leading-snug ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
+                              {item.itemName}
+                            </h3>
                           </div>
 
-                          {(() => {
-                            const itemCartEntries = Object.values(cart).filter((c) => c.id === item.id);
-                            const totalItemQty = itemCartEntries.reduce((sum, c) => sum + c.quantity, 0);
-                            const hasCustomizations = (item.variants && item.variants.length > 0) || (item.addons && item.addons.length > 0);
+                          {item.description && (
+                            <p className={`text-xs line-clamp-2 leading-relaxed ${isDark ? "text-[#cfc2d8]" : "text-slate-500"}`}>
+                              {item.description}
+                            </p>
+                          )}
 
-                            return totalItemQty > 0 ? (
-                              <div className="mt-2 flex flex-col items-center">
-                                <div className="flex items-center space-x-2.5 px-3 py-1 rounded-xl bg-purple-600 text-white text-xs font-black shadow-md">
+                          <div className="flex justify-between items-center pt-1">
+                            <div className="flex items-baseline space-x-1.5">
+                              <span className={`font-extrabold text-lg ${isDark ? "text-[#dcb8ff]" : "text-slate-900"}`}>
+                                ₹{item.discountPrice ? item.discountPrice : item.price}
+                              </span>
+                              {hasDiscount && (
+                                <span className={`text-xs line-through font-normal ${isDark ? "text-[#cfc2d8]/60" : "text-slate-400"}`}>
+                                  ₹{item.price}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* + ADD / Quantity Actions */}
+                            <div>
+                              {totalItemQty > 0 ? (
+                                <div className={`flex items-center text-white rounded-lg overflow-hidden font-bold shadow-lg ${isDark ? "bg-[#9d34ff] shadow-[#9d34ff]/20" : "bg-purple-600 shadow-purple-600/20"}`}>
                                   <button
                                     type="button"
                                     onClick={() => {
                                       const lastEntry = itemCartEntries[itemCartEntries.length - 1];
                                       if (lastEntry) removeFromCart(lastEntry.cartKey);
                                     }}
-                                    className="px-1 text-base font-black hover:text-purple-200"
+                                    className="w-8 h-9 flex items-center justify-center hover:bg-black/20 transition-colors"
                                   >
-                                    -
+                                    <Minus className="w-4 h-4" />
                                   </button>
-                                  <span>{totalItemQty}</span>
+                                  <span className="w-7 text-center text-xs font-black">{totalItemQty}</span>
                                   <button
                                     type="button"
                                     onClick={() => handleOpenCustomization(item)}
-                                    className="px-1 text-base font-black hover:text-purple-200"
+                                    className="w-8 h-9 flex items-center justify-center hover:bg-black/20 transition-colors"
                                   >
-                                    +
+                                    <Plus className="w-4 h-4" />
                                   </button>
                                 </div>
-                                {hasCustomizations && (
-                                  <span className="text-[9px] font-black text-purple-700 mt-0.5">Customisable</span>
-                                )}
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCustomization(item)}
-                                className="mt-2 px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black text-xs shadow-md transition-all flex items-center space-x-1 uppercase"
-                              >
-                                <span>+ Add</span>
-                                {hasCustomizations && <span className="text-[9px] font-black text-purple-200 ml-0.5">*</span>}
-                              </button>
-                            );
-                          })()}
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCustomization(item)}
+                                  className={`px-5 py-2 text-white rounded-lg font-bold text-xs transition-all active:scale-95 shadow-lg ${
+                                    isDark
+                                      ? "bg-[#9d34ff] hover:bg-[#8806ea] shadow-[#9d34ff]/20"
+                                      : "bg-purple-600 hover:bg-purple-700 shadow-purple-600/20"
+                                  }`}
+                                >
+                                  + ADD
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
@@ -509,29 +665,44 @@ export default function CustomerMenuPage() {
         )}
       </main>
 
-      {/* Floating View Cart Bar */}
+      {/* 6. FLOATING CART BAR */}
       {cartTotalCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
-          <div className="p-4 rounded-3xl bg-slate-950 text-white shadow-2xl border border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-300">
-                {cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"} Selected
-              </span>
-              <div className="font-black text-2xl text-white">₹{cartTotalPrice.toFixed(2)}</div>
-            </div>
-
-            <Link
-              href="/restaurant/checkout"
-              className="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black text-sm shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+        <div className="fixed bottom-4 left-0 w-full px-4 z-50">
+          <div className="max-w-4xl mx-auto">
+            <div
+              className={`rounded-2xl p-4 flex justify-between items-center shadow-2xl border ${
+                isDark
+                  ? "bg-[#0A0A0B] border-[#1C1C1E] shadow-[0_-8px_24px_rgba(157,52,255,0.25)]"
+                  : "bg-slate-950 text-white border-slate-800"
+              }`}
             >
-              <span>View Cart</span>
-              <ChevronRight className="w-4 h-4 text-purple-200" />
-            </Link>
+              <div className="flex flex-col">
+                <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-[#cfc2d8]" : "text-purple-300"}`}>
+                  {cartTotalCount} {cartTotalCount === 1 ? "ITEM" : "ITEMS"}
+                </span>
+                <span className="text-xl font-black text-white">
+                  ₹{cartTotalPrice.toFixed(2)}{" "}
+                  <span className={`text-xs font-normal ml-1 ${isDark ? "text-[#cfc2d8]" : "text-slate-400"}`}>plus taxes</span>
+                </span>
+              </div>
+
+              <Link
+                href="/restaurant/checkout"
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-95 text-white shadow-lg ${
+                  isDark
+                    ? "bg-[#9d34ff] hover:bg-[#8806ea] shadow-[#9d34ff]/30"
+                    : "bg-purple-600 hover:bg-purple-500 shadow-purple-600/30"
+                }`}
+              >
+                <span>View Cart</span>
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Swipable Bottom Sheet Drawer for Variants & Add-ons */}
+      {/* 7. CUSTOMIZATION BOTTOM SHEET (Variants & Addons) */}
       <AnimatePresence>
         {selectedMenuItemForCustomization && (
           <div className="fixed inset-0 z-50 flex items-end justify-center p-0">
@@ -541,7 +712,7 @@ export default function CustomerMenuPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedMenuItemForCustomization(null)}
-              className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs cursor-pointer"
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs cursor-pointer"
             />
 
             {/* Swipeable Drawer Content */}
@@ -558,22 +729,28 @@ export default function CustomerMenuPage() {
                 }
               }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="relative w-full max-w-lg bg-white rounded-t-[32px] p-6 shadow-2xl border-t border-slate-200 space-y-5 z-10 max-h-[85vh] overflow-y-auto"
+              className={`relative w-full max-w-lg rounded-t-[32px] p-6 shadow-2xl border-t space-y-5 z-10 max-h-[85vh] overflow-y-auto ${
+                isDark
+                  ? "bg-[#121415] border-[#1c1c1e] text-[#e2e2e3]"
+                  : "bg-white border-slate-200 text-slate-900"
+              }`}
             >
               {/* Drag Handle Bar */}
-              <div className="w-12 h-1.5 rounded-full bg-slate-300 mx-auto -mt-2 mb-2 cursor-grab active:cursor-grabbing" />
+              <div className={`w-12 h-1.5 rounded-full mx-auto -mt-2 mb-2 cursor-grab ${isDark ? "bg-[#333536]" : "bg-slate-300"}`} />
 
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className={`flex items-center justify-between border-b pb-3 ${isDark ? "border-[#1c1c1e]" : "border-slate-200"}`}>
                 <div>
-                  <h3 className="font-black text-lg text-slate-900 leading-snug">
+                  <h3 className={`font-extrabold text-lg leading-snug ${isDark ? "text-[#e2e2e3]" : "text-slate-900"}`}>
                     {selectedMenuItemForCustomization.itemName}
                   </h3>
-                  <span className="text-xs font-black text-purple-700">Customise portion & add-ons</span>
+                  <span className={`text-xs font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>
+                    Customise portion & add-ons
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedMenuItemForCustomization(null)}
-                  className="p-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  className={`p-1.5 rounded-xl ${isDark ? "bg-[#1e2021] text-[#cfc2d8]" : "bg-slate-100 text-slate-600"}`}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -582,7 +759,7 @@ export default function CustomerMenuPage() {
               {/* Variants Option Selection */}
               {selectedMenuItemForCustomization.variants && selectedMenuItemForCustomization.variants.length > 0 && (
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                  <label className={`block text-xs font-extrabold uppercase tracking-wider ${isDark ? "text-[#cfc2d8]" : "text-slate-700"}`}>
                     Select Portion / Size *
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -593,7 +770,11 @@ export default function CustomerMenuPage() {
                         onClick={() => setSelectedVariant(v)}
                         className={`p-3.5 rounded-2xl text-xs font-bold border transition-all flex items-center justify-between ${
                           selectedVariant?.id === v.id
-                            ? "bg-purple-600 text-white border-purple-600 shadow-md font-black"
+                            ? isDark
+                              ? "bg-[#9d34ff] text-white border-[#9d34ff] font-black shadow-md"
+                              : "bg-purple-600 text-white border-purple-600 font-black shadow-md"
+                            : isDark
+                            ? "bg-[#1e2021] text-[#e2e2e3] border-[#333536] hover:border-[#9d34ff]"
                             : "bg-slate-50 text-slate-800 border-slate-200 hover:border-purple-300"
                         }`}
                       >
@@ -608,7 +789,7 @@ export default function CustomerMenuPage() {
               {/* Add-ons Option Selection */}
               {selectedMenuItemForCustomization.addons && selectedMenuItemForCustomization.addons.length > 0 && (
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                  <label className={`block text-xs font-extrabold uppercase tracking-wider ${isDark ? "text-[#cfc2d8]" : "text-slate-700"}`}>
                     Add Extra Toppings & Extras
                   </label>
                   <div className="space-y-2">
@@ -626,17 +807,21 @@ export default function CustomerMenuPage() {
                           }}
                           className={`w-full p-3.5 rounded-2xl text-xs font-bold border transition-all flex items-center justify-between ${
                             isSelected
-                              ? "bg-purple-50 text-purple-900 border-purple-300 shadow-xs font-black"
+                              ? isDark
+                                ? "bg-[#9d34ff]/20 text-[#dcb8ff] border-[#9d34ff] font-black"
+                                : "bg-purple-50 text-purple-900 border-purple-300 font-black"
+                              : isDark
+                              ? "bg-[#1e2021] text-[#e2e2e3] border-[#333536] hover:border-[#9d34ff]"
                               : "bg-slate-50 text-slate-800 border-slate-200 hover:border-purple-300"
                           }`}
                         >
                           <div className="flex items-center space-x-2.5">
-                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${isSelected ? "bg-purple-600 border-purple-600 text-white" : "border-slate-300 bg-white"}`}>
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${isSelected ? (isDark ? "bg-[#9d34ff] border-[#9d34ff] text-white" : "bg-purple-600 border-purple-600 text-white") : "border-slate-300 bg-white"}`}>
                               {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                             </div>
                             <span>{addon.addonName}</span>
                           </div>
-                          <span className="text-purple-700 font-black">+₹{parseFloat(addon.price).toFixed(2)}</span>
+                          <span className={`font-bold ${isDark ? "text-[#dcb8ff]" : "text-purple-700"}`}>+₹{parseFloat(addon.price).toFixed(2)}</span>
                         </button>
                       );
                     })}
@@ -660,7 +845,9 @@ export default function CustomerMenuPage() {
                   <button
                     type="button"
                     onClick={() => addToCartWithDetails(selectedMenuItemForCustomization, selectedVariant, addonsList)}
-                    className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-base shadow-xl flex items-center justify-between px-6 transition-all active:scale-98"
+                    className={`w-full py-4 rounded-2xl text-white font-black text-base shadow-xl flex items-center justify-between px-6 transition-all active:scale-98 ${
+                      isDark ? "bg-[#9d34ff] hover:bg-[#8806ea]" : "bg-purple-600 hover:bg-purple-700"
+                    }`}
                   >
                     <span>Add Item to Order</span>
                     <span>₹{itemTotal.toFixed(2)}</span>

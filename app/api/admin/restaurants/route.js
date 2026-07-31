@@ -28,16 +28,22 @@ export async function GET() {
 
 export async function PATCH(request) {
   try {
-    const { restaurantId, isActive } = await request.json();
+    const { restaurantId, isActive, themeMode, isCashEnabled, isOnlineUpiEnabled, isCreditCardEnabled } = await request.json();
 
     const updated = await prisma.restaurant.update({
       where: { id: restaurantId },
-      data: { isActive },
+      data: {
+        ...(isActive !== undefined && { isActive }),
+        ...(themeMode !== undefined && { themeMode }),
+        ...(isCashEnabled !== undefined && { isCashEnabled }),
+        ...(isOnlineUpiEnabled !== undefined && { isOnlineUpiEnabled }),
+        ...(isCreditCardEnabled !== undefined && { isCreditCardEnabled }),
+      },
     });
 
     return NextResponse.json({ success: true, restaurant: updated });
   } catch (error) {
-    console.error("Update Restaurant Status Error:", error);
-    return NextResponse.json({ error: "Failed to update restaurant status" }, { status: 500 });
+    console.error("Update Restaurant Settings Error:", error);
+    return NextResponse.json({ error: "Failed to update restaurant settings" }, { status: 500 });
   }
 }

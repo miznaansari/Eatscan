@@ -81,6 +81,10 @@ model Restaurant {
   isVerifiedMobileNo Boolean                  @default(false)
   isVerifiedEmail    Boolean                  @default(false)
   isActive           Boolean                  @default(true)
+  themeMode          String                   @default("DARK") // DARK, LIGHT, SYSTEM
+  isCashEnabled      Boolean                  @default(true)
+  isOnlineUpiEnabled Boolean                  @default(true)
+  isCreditCardEnabled Boolean                 @default(true)
   isDeleted          Boolean                  @default(false)
   deletedAt          DateTime?
   createdAt          DateTime                 @default(now())

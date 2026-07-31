@@ -146,3 +146,45 @@ export async function DELETE(request) {
     return NextResponse.json({ error: "Soft delete failed" }, { status: 500 });
   }
 }
+
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { type, id, categoryName, categoryImage, itemName, price, discountPrice, imageUrl, foodType } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID required" }, { status: 400 });
+    }
+
+    if (type === "CATEGORY") {
+      const updatedCat = await prisma.menuCategory.update({
+        where: { id },
+        data: {
+          ...(categoryName !== undefined && { categoryName }),
+          ...(categoryImage !== undefined && { categoryImage }),
+        },
+      });
+      return NextResponse.json({ success: true, category: updatedCat });
+    }
+
+    if (type === "MENU_ITEM") {
+      const updatedItem = await prisma.menu.update({
+        where: { id },
+        data: {
+          ...(itemName !== undefined && { itemName }),
+          ...(price !== undefined && { price: parseFloat(price) }),
+          ...(discountPrice !== undefined && { discountPrice: discountPrice ? parseFloat(discountPrice) : null }),
+          ...(imageUrl !== undefined && { imageUrl }),
+          ...(foodType !== undefined && { foodType }),
+        },
+      });
+      return NextResponse.json({ success: true, item: updatedItem });
+    }
+
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+  } catch (error) {
+    console.error("Update Error:", error);
+    return NextResponse.json({ error: "Failed to update record" }, { status: 500 });
+  }
+}
+
